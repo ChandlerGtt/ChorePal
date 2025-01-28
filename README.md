@@ -2,12 +2,12 @@
 
 
 ## Team 5: DevlnSync
-<p>
+
 <ul>
-Project lead: Chandler Garrett
-Project Member: Jatin Kumar
-Project Member: Kevin Villatoro
-Project Member: Amir Beheshti
-Project Member: Travis Tannery
+<li>Project lead: Chandler Garrett</li>
+<li>Project Member: Jatin Kumar</li>
+<li>Project Member: Kevin Villatoro</li>
+<li>Amir Beheshti</li>Project Member: 
+<li>Project Member: Travis Tannery</li>
 </ul>
-</p>
+
