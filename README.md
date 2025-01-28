@@ -1,5 +1,6 @@
 # ChorePal
-
+## Version 0.0.0
+CSCE 4901 Capstone Course Group 5 GitHub repository
 
 ## Team 5: DevlnSync
 
