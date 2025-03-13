@@ -1,14 +1,16 @@
-# ChorePal
-## Version 0.0.0
-CSCE 4901 Capstone Course Group 5 GitHub repository
+# chore_pal
 
-## Team 5: DevlnSync
+A new Flutter project.
 
-<ul>
-<li>Project lead: Chandler Garrett</li>
-<li>Project Member: Jatin Kumar</li>
-<li>Project Member: Kevin Villatoro</li>
-<li>Project Member: Amir Beheshti</li>
-<li>Project Member: Travis Tannery</li>
-</ul>
+## Getting Started
 
+This project is a starting point for a Flutter application.
+
+A few resources to get you started if this is your first Flutter project:
+
+- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
