@@ -1,4 +1,10 @@
+// lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
+import '../models/chore_state.dart';
+import '../models/reward_state.dart';
 import 'parent/parent_dashboard.dart';
 import 'child/child_dashboard.dart';
 
@@ -9,117 +15,578 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  bool _isParent = true;
-  final _codeController = TextEditingController();
+  late TabController _tabController;
+  bool _isLoading = false;
+  String? _errorMessage;
+  
+  // Parent login fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _nameController = TextEditingController();
+  bool _isRegistering = false;
+  
+  // Child login fields
+  final _childNameController = TextEditingController();
+  final _familyCodeController = TextEditingController();
+  
+  final AuthService _authService = AuthService();
+  final FirestoreService _firestoreService = FirestoreService();
+
+  // Theme colors
+  final Color _primaryColor = const Color(0xFF4CAF50); // Green
+  final Color _accentColor = const Color(0xFF2196F3); // Blue
+  final Color _backgroundColor = const Color(0xFFF5F5F5); // Light gray
+  final Color _textColor = const Color(0xFF333333); // Dark gray
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _nameController.dispose();
+    _childNameController.dispose();
+    _familyCodeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ChorePal'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(
-                    value: true,
-                    label: Text('Parent'),
-                  ),
-                  ButtonSegment(
-                    value: false,
-                    label: Text('Child'),
+      backgroundColor: _backgroundColor,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 40),
+            Icon(
+              Icons.check_circle_outline,
+              size: 70,
+              color: _primaryColor,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'ChorePal',
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: _textColor,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Helping families manage chores together',
+              style: TextStyle(
+                fontSize: 16,
+                color: _textColor.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 30),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
                 ],
-                selected: {_isParent},
-                onSelectionChanged: (Set<bool> newSelection) {
-                  setState(() {
-                    _isParent = newSelection.first;
-                  });
-                },
               ),
-              const SizedBox(height: 20),
-              if (_isParent) ...[
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    return null;
-                  },
+              margin: const EdgeInsets.symmetric(horizontal: 50),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  color: _primaryColor,
+                  borderRadius: BorderRadius.circular(25),
                 ),
-                const SizedBox(height: 10),
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    border: OutlineInputBorder(),
+                labelColor: Colors.white,
+                unselectedLabelColor: _textColor,
+                tabs: const [
+                  Tab(text: 'Parent'),
+                  Tab(text: 'Child'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildParentLoginForm(),
+                  _buildChildLoginForm(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildParentLoginForm() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    _isRegistering ? 'Create Parent Account' : 'Parent Login',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: _textColor,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your password';
-                    }
-                    return null;
-                  },
-                ),
-              ] else ...[
-                TextFormField(
-                  controller: _codeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Family Code',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your family code';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => _isParent
-                            ? const ParentDashboard()
-                            : const ChildDashboard(),
+                  const SizedBox(height: 20),
+                  if (_isRegistering) ...[
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Your Name',
+                        prefixIcon: Icon(Icons.person, color: _primaryColor),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: _primaryColor, width: 2),
+                        ),
                       ),
-                    );
-                  }
-                },
-                child: Text(_isParent ? 'Login as Parent' : 'Login as Child'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.email, color: _primaryColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: _primaryColor, width: 2),
+                      ),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Please enter a valid email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock, color: _primaryColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: _primaryColor, width: 2),
+                      ),
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password';
+                      }
+                      if (_isRegistering && value.length < 6) {
+                        return 'Password must be at least 6 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 2,
+                    ),
+                    onPressed: _isLoading ? null : _handleParentSubmit,
+                    child: _isLoading
+                        ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
+                          )
+                        : Text(
+                            _isRegistering ? 'Register' : 'Login',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: _isLoading ? null : _toggleParentAuthMode,
+                    child: Text(
+                      _isRegistering
+                          ? 'Already have an account? Login'
+                          : 'Create a new account',
+                      style: TextStyle(color: _accentColor),
+                    ),
+                  ),
+                ],
               ),
-              if (_isParent) ...[
-                const SizedBox(height: 10),
-                TextButton(
-                  onPressed: () {
-                    // Implement parent registration
-                  },
-                  child: const Text('Register as Parent'),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildChildLoginForm() {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Child Login',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: _textColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: _childNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Your Name',
+                      prefixIcon: Icon(Icons.person, color: _primaryColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: _primaryColor, width: 2),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _familyCodeController,
+                    decoration: InputDecoration(
+                      labelText: 'Family Code',
+                      prefixIcon: Icon(Icons.home, color: _primaryColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: _primaryColor, width: 2),
+                      ),
+                      hintText: 'Example: FAM-1234',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your family code';
+                      }
+                      return null;
+                    },
+                  ),
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 2,
+                    ),
+                    onPressed: _isLoading ? null : _handleChildLogin,
+                    child: _isLoading
+                        ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 3,
+                            ),
+                          )
+                        : const Text(
+                            'Login',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ask your parent for the family code',
+                    style: TextStyle(color: _textColor.withOpacity(0.6)),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _toggleParentAuthMode() {
+    setState(() {
+      _isRegistering = !_isRegistering;
+      _errorMessage = null;
+    });
+  }
+
+  Future<void> _handleParentSubmit() async {
+    try {
+      if (_formKey.currentState!.validate()) {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = null;
+        });
+
+        if (_isRegistering) {
+          // Register new parent
+          final credential = await _authService.registerWithEmailAndPassword(
+            _emailController.text.trim(),
+            _passwordController.text.trim(),
+          );
+          
+          // Create a new family
+          final familyRef = await _firestoreService.createFamily(
+            credential.user!.uid,
+            'Family ${_nameController.text}',
+          );
+          
+          // Create user profile
+          await _firestoreService.createUserProfile(
+            credential.user!.uid,
+            _nameController.text,
+            true,
+            familyId: familyRef.id,
+          );
+          
+          if (mounted) {
+            // Initialize data for state providers
+            final choreState = Provider.of<ChoreState>(context, listen: false);
+            choreState.setFamilyId(familyRef.id);
+            await choreState.loadChores();
+            
+            final rewardState = Provider.of<RewardState>(context, listen: false);
+            rewardState.setFamilyId(familyRef.id);
+            await rewardState.loadRewards();
+            
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const ParentDashboard()),
+            );
+          }
+        } else {
+          // Login existing parent
+          final credential = await _authService.signInWithEmailAndPassword(
+            _emailController.text.trim(),
+            _passwordController.text.trim(),
+          );
+          
+          // Get user data
+          final userDoc = await _firestoreService.users.doc(credential.user!.uid).get();
+          if (!userDoc.exists) {
+            throw Exception('User profile not found');
+          }
+          
+          final userData = userDoc.data() as Map<String, dynamic>;
+          if (userData['isParent'] != true) {
+            throw Exception('This account is not registered as a parent');
+          }
+          
+          if (mounted) {
+            // Initialize data for state providers
+            final choreState = Provider.of<ChoreState>(context, listen: false);
+            choreState.setFamilyId(userData['familyId']);
+            await choreState.loadChores();
+            
+            final rewardState = Provider.of<RewardState>(context, listen: false);
+            rewardState.setFamilyId(userData['familyId']);
+            await rewardState.loadRewards();
+            
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const ParentDashboard()),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
+          _isLoading = false;
+        });
+      }
+    } finally {
+      if (mounted && _isLoading) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleChildLogin() async {
+    try {
+      if (_formKey.currentState!.validate()) {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = null;
+        });
+
+        // Find family by code
+        final familySnapshot = await _firestoreService.findFamilyByCode(
+          _familyCodeController.text.trim(),
+        );
+        
+        if (familySnapshot.docs.isEmpty) {
+          throw Exception('Invalid family code. Please check and try again.');
+        }
+        
+        final familyDoc = familySnapshot.docs.first;
+        final familyId = familyDoc.id;
+        
+        // Generate a "virtual" ID for the child based on family code and name
+        // This avoids needing authentication for children
+        final childId = '${familyId}_${_childNameController.text.hashCode}';
+        
+        // Check if child profile exists, create if not
+        final childDocRef = _firestoreService.users.doc(childId);
+        final childDoc = await childDocRef.get();
+        
+        if (!childDoc.exists) {
+          // Create child profile
+          await _firestoreService.createUserProfile(
+            childId,
+            _childNameController.text,
+            false, // not a parent
+            familyId: familyId,
+          );
+          
+          // Add child to family
+          await _firestoreService.addChildToFamily(familyId, childId);
+        }
+        
+        if (mounted) {
+          // Initialize data for state providers
+          final choreState = Provider.of<ChoreState>(context, listen: false);
+          choreState.setFamilyId(familyId);
+          await choreState.loadChores();
+          
+          final rewardState = Provider.of<RewardState>(context, listen: false);
+          rewardState.setFamilyId(familyId);
+          await rewardState.loadRewards();
+          
+          // Store child ID in a global variable or pass to dashboard
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => ChildDashboard(childId: childId),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
+          _isLoading = false;
+        });
+      }
+    } finally {
+      if (mounted && _isLoading) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 }

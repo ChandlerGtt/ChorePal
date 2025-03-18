@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "941468631552",
+    "project_id": "chorepal-88256",
+    "storage_bucket": "chorepal-88256.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941468631552:android:8227ae8203f84ff7954ee5",
+        "android_client_info": {
+          "package_name": "com.example.chore_pal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFAHNi8ls70wnmSHFYA-Zp92vcpuA4iKc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941468631552:android:fe03f52d340c39b2954ee5",
+        "android_client_info": {
+          "package_name": "com.unt.chorepal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDFAHNi8ls70wnmSHFYA-Zp92vcpuA4iKc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
