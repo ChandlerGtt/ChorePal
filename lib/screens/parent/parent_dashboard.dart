@@ -109,6 +109,7 @@ class _ParentDashboardState extends State<ParentDashboard>
               ),
             ),
             body: TabBarView(
+              controller: this._tabController,
               children: [
                 _buildChoresTab(),
                 _buildRewardsTab(),
