@@ -10,6 +10,7 @@ import '../../widgets/reward_card.dart'; // Import the RewardCard
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../login_screen.dart';
+import '../../models/reward.dart';
 import 'add_reward_screen.dart'; // Import the AddRewardScreen
 import 'assign_chore_screen.dart'; // Import the AssignChoreScreen
 import '../reward_history_screen.dart';
@@ -22,46 +23,39 @@ class ParentDashboard extends StatefulWidget {
   State<ParentDashboard> createState() => _ParentDashboardState();
 }
 
-class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProviderStateMixin {
+class _ParentDashboardState extends State<ParentDashboard>
+    with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
   late TabController _tabController;
   String familyCode = 'Loading...';
-  int _selectedTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(() {
-      setState(() {
-        _selectedTabIndex = _tabController.index;
-      });
-    });
+    this._tabController = TabController(length: 4, vsync: this);
+    this._tabController.addListener(() {});
     _loadFamilyCode();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadFamilyCode() async {
     if (_authService.currentUser != null) {
-      final userDoc = await _firestoreService.users.doc(_authService.currentUser!.uid).get();
+      final userDoc = await _firestoreService.users
+          .doc(_authService.currentUser!.uid)
+          .get();
       if (!mounted) return; // Check mounted before using context
-      
+
       final userData = userDoc.data() as Map<String, dynamic>;
       final familyId = userData['familyId'];
-      
+
       if (familyId != null) {
         final familyDoc = await _firestoreService.families.doc(familyId).get();
         if (!mounted) return; // Check mounted again
-        
+
         final familyData = familyDoc.data() as Map<String, dynamic>;
         setState(() {
-          familyCode = familyData['familyCode'] ?? 'FAM123'; // Default code if not set
+          familyCode =
+              familyData['familyCode'] ?? 'FAM123'; // Default code if not set
         });
       }
     }
@@ -102,12 +96,15 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                   },
                 ),
               ],
-              bottom: const TabBar(
+              bottom: TabBar(
+                controller: this._tabController,
                 tabs: [
                   Tab(text: 'Chores', icon: Icon(Icons.checklist)),
                   Tab(text: 'Rewards', icon: Icon(Icons.card_giftcard)),
                   Tab(text: 'Children', icon: Icon(Icons.people)),
-                  Tab(text: 'Statistics', icon: Icon(Icons.bar_chart)), // New statistics tab
+                  Tab(
+                      text: 'Statistics',
+                      icon: Icon(Icons.bar_chart)), // New statistics tab
                 ],
               ),
             ),
@@ -121,13 +118,15 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
             ),
             floatingActionButton: FloatingActionButton(
               onPressed: () {
-                if (_selectedTabIndex == 0) {
+                if (_tabController.index == 0) {
                   _showAddChoreDialog(context);
-                } else {
+                }
+                if (_tabController.index == 1) {
                   // Navigate to add reward screen
                   Navigator.push(
-                    context, 
-                    MaterialPageRoute(builder: (context) => const AddRewardScreen()),
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const AddRewardScreen()),
                   );
                 }
               },
@@ -143,7 +142,7 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(8.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -166,21 +165,24 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
               if (choreState.isLoading) {
                 return const Center(child: CircularProgressIndicator());
               }
-              
+
               if (choreState.chores.isEmpty) {
                 return const Center(
-                  child: Text('No chores added yet. Click the + button to add a chore!'),
+                  child: Text(
+                      'No chores added yet. Click the + button to add a chore!'),
                 );
               }
-              
+
               // First show all pending approval chores
               final pendingApprovalChores = choreState.pendingApprovalChores;
-              final otherChores = choreState.pendingChores + choreState.completedChores;
-              
+              final otherChores =
+                  choreState.pendingChores + choreState.completedChores;
+
               final allChores = [...pendingApprovalChores, ...otherChores];
-              
+
               return ListView.builder(
-                itemCount: allChores.length + (pendingApprovalChores.isNotEmpty ? 1 : 0),
+                itemCount: allChores.length +
+                    (pendingApprovalChores.isNotEmpty ? 1 : 0),
                 itemBuilder: (context, index) {
                   // If we have pending approvals, add a section header
                   if (pendingApprovalChores.isNotEmpty && index == 0) {
@@ -196,11 +198,12 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                       ),
                     );
                   }
-                  
+
                   // Adjust index if we added a header
-                  final choreIndex = pendingApprovalChores.isNotEmpty ? index - 1 : index;
+                  final choreIndex =
+                      pendingApprovalChores.isNotEmpty ? index - 1 : index;
                   final chore = allChores[choreIndex];
-                  
+
                   return ChoreCard(
                     chore: chore,
                     onApprove: _handleApproveChore,
@@ -231,55 +234,62 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
         }
         if (rewardState.rewards.isEmpty) {
           return const Center(
-            child: Text('No rewards added yet. Click the + button to add a reward!'),
+            child: Text(
+                'No rewards added yet. Click the + button to add a reward!'),
           );
         }
-        
+
         final rewardsByTier = rewardState.rewardsByTier;
         final children = <Widget>[];
-        
+
         if (rewardsByTier.containsKey('gold')) {
-          children.add(
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text('Gold Tier Rewards', 
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.amber),
-              ),
-            )
-          );
-          children.addAll(
-            rewardsByTier['gold']!.map((reward) => RewardCard(reward: reward)).toList()
-          );
+          children.add(const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              'Gold Tier Rewards',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber),
+            ),
+          ));
+          children.addAll(rewardsByTier['gold']!
+              .map((reward) => RewardCard(reward: reward))
+              .toList());
         }
-        
+
         if (rewardsByTier.containsKey('silver')) {
-          children.add(
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text('Silver Tier Rewards', 
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey),
-              ),
-            )
-          );
-          children.addAll(
-            rewardsByTier['silver']!.map((reward) => RewardCard(reward: reward)).toList()
-          );
+          children.add(const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              'Silver Tier Rewards',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey),
+            ),
+          ));
+          children.addAll(rewardsByTier['silver']!
+              .map((reward) => RewardCard(reward: reward))
+              .toList());
         }
-        
+
         if (rewardsByTier.containsKey('bronze')) {
-          children.add(
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Text('Bronze Tier Rewards', 
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.brown),
-              ),
-            )
-          );
-          children.addAll(
-            rewardsByTier['bronze']!.map((reward) => RewardCard(reward: reward)).toList()
-          );
+          children.add(const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              'Bronze Tier Rewards',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.brown),
+            ),
+          ));
+          children.addAll(rewardsByTier['bronze']!
+              .map((reward) => RewardCard(reward: reward))
+              .toList());
         }
-        
+
         return ListView(children: children);
       },
     );
@@ -296,18 +306,20 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
             ),
           );
         }
-        
+
         return Consumer<RewardState>(
           builder: (context, rewardState, _) {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: userState.childrenInFamily.map((childUser) {
-                final completedChoreCount = choreState.chores.where(
-                  (chore) => chore.isCompleted && chore.completedBy == childUser.id
-                ).length;
-                
-                final redeemedRewardCount = rewardState.getChildRedeemedRewards(childUser.id).length;
-                
+                final completedChoreCount = choreState.chores
+                    .where((chore) =>
+                        chore.isCompleted && chore.completedBy == childUser.id)
+                    .length;
+
+                final redeemedRewardCount =
+                    rewardState.getChildRedeemedRewards(childUser.id).length;
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
                   elevation: 2,
@@ -324,7 +336,9 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                             CircleAvatar(
                               backgroundColor: Colors.blue.shade100,
                               child: Text(
-                                childUser.name.isNotEmpty ? childUser.name[0].toUpperCase() : '?',
+                                childUser.name.isNotEmpty
+                                    ? childUser.name[0].toUpperCase()
+                                    : '?',
                                 style: TextStyle(
                                   color: Colors.blue.shade800,
                                   fontWeight: FontWeight.bold,
@@ -355,13 +369,13 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                         ),
                         const SizedBox(height: 16),
                         _buildStatRow(
-                          'Completed Chores', 
-                          '$completedChoreCount', 
+                          'Completed Chores',
+                          '$completedChoreCount',
                           Icons.check_circle,
                         ),
                         _buildStatRow(
-                          'Redeemed Rewards', 
-                          '$redeemedRewardCount', 
+                          'Redeemed Rewards',
+                          '$redeemedRewardCount',
                           Icons.redeem,
                         ),
                       ],
@@ -385,11 +399,14 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
 
         // Calculate statistics
         final totalChores = choreState.chores.length;
-        final completedChores = choreState.chores.where((c) => c.isCompleted).length;
-        final pendingChores = choreState.chores.where((c) => c.isPendingApproval).length;
+        final completedChores =
+            choreState.chores.where((c) => c.isCompleted).length;
+        final pendingChores =
+            choreState.chores.where((c) => c.isPendingApproval).length;
         final totalRewards = rewardState.rewards.length;
-        final redeemedRewards = rewardState.rewards.where((r) => r.isRedeemed).length;
-        
+        final redeemedRewards =
+            rewardState.rewards.where((r) => r.isRedeemed).length;
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -414,18 +431,23 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildStatRow('Total Chores Created', '$totalChores', Icons.assignment),
-                      _buildStatRow('Completed Chores', '$completedChores', Icons.check_circle),
-                      _buildStatRow('Pending Approval', '$pendingChores', Icons.hourglass_top),
-                      _buildStatRow('Total Rewards', '$totalRewards', Icons.card_giftcard),
-                      _buildStatRow('Redeemed Rewards', '$redeemedRewards', Icons.redeem),
+                      _buildStatRow('Total Chores Created', '$totalChores',
+                          Icons.assignment),
+                      _buildStatRow('Completed Chores', '$completedChores',
+                          Icons.check_circle),
+                      _buildStatRow('Pending Approval', '$pendingChores',
+                          Icons.hourglass_top),
+                      _buildStatRow('Total Rewards', '$totalRewards',
+                          Icons.card_giftcard),
+                      _buildStatRow(
+                          'Redeemed Rewards', '$redeemedRewards', Icons.redeem),
                     ],
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Child progress section
               const Text(
                 'Children Progress',
@@ -435,7 +457,7 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               Consumer<UserState>(
                 builder: (context, userState, _) {
                   if (userState.childrenInFamily.isEmpty) {
@@ -446,20 +468,26 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                       ),
                     );
                   }
-                  
+
                   return Column(
                     children: userState.childrenInFamily.map((childUser) {
-                      final completedChoreCount = choreState.chores.where(
-                        (chore) => chore.isCompleted && chore.completedBy == childUser.id
-                      ).length;
-                      
-                      final redeemedRewardCount = rewardState.getChildRedeemedRewards(childUser.id).length;
-                      
+                      final completedChoreCount = choreState.chores
+                          .where((chore) =>
+                              chore.isCompleted &&
+                              chore.completedBy == childUser.id)
+                          .length;
+
+                      final redeemedRewardCount = rewardState
+                          .getChildRedeemedRewards(childUser.id)
+                          .length;
+
                       // Get milestone info
                       final milestoneManager = MilestoneManager();
-                      final currentMilestone = milestoneManager.getCurrentMilestone(childUser.points);
-                      final nextMilestone = milestoneManager.getNextMilestone(childUser.points);
-                      
+                      final currentMilestone = milestoneManager
+                          .getCurrentMilestone(childUser.points);
+                      final nextMilestone =
+                          milestoneManager.getNextMilestone(childUser.points);
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 16),
                         elevation: 2,
@@ -476,7 +504,9 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                                   CircleAvatar(
                                     backgroundColor: Colors.blue.shade100,
                                     child: Text(
-                                      childUser.name.isNotEmpty ? childUser.name[0].toUpperCase() : '?',
+                                      childUser.name.isNotEmpty
+                                          ? childUser.name[0].toUpperCase()
+                                          : '?',
                                       style: TextStyle(
                                         color: Colors.blue.shade800,
                                         fontWeight: FontWeight.bold,
@@ -485,7 +515,8 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                                   ),
                                   const SizedBox(width: 16),
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         childUser.name,
@@ -507,16 +538,16 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                               ),
                               const SizedBox(height: 16),
                               _buildStatRow(
-                                'Completed Chores', 
-                                '$completedChoreCount', 
+                                'Completed Chores',
+                                '$completedChoreCount',
                                 Icons.check_circle,
                               ),
                               _buildStatRow(
-                                'Redeemed Rewards', 
-                                '$redeemedRewardCount', 
+                                'Redeemed Rewards',
+                                '$redeemedRewardCount',
                                 Icons.redeem,
                               ),
-                              
+
                               // Current milestone
                               if (currentMilestone != null) ...[
                                 const SizedBox(height: 16),
@@ -532,7 +563,8 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    Icon(currentMilestone.icon, color: currentMilestone.color),
+                                    Icon(currentMilestone.icon,
+                                        color: currentMilestone.color),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(currentMilestone.description),
@@ -540,7 +572,7 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                                   ],
                                 ),
                               ],
-                              
+
                               // Next milestone
                               if (nextMilestone != null) ...[
                                 const SizedBox(height: 16),
@@ -556,7 +588,8 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    Icon(nextMilestone.icon, color: Colors.grey),
+                                    Icon(nextMilestone.icon,
+                                        color: Colors.grey),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -572,7 +605,8 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: LinearProgressIndicator(
-                                    value: childUser.points / nextMilestone.pointThreshold,
+                                    value: childUser.points /
+                                        nextMilestone.pointThreshold,
                                     minHeight: 10,
                                     backgroundColor: Colors.grey.shade200,
                                     valueColor: AlwaysStoppedAnimation<Color>(
@@ -595,7 +629,7 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
       },
     );
   }
-  
+
   // Helper method to build a row of statistics
   Widget _buildStatRow(String label, String value, IconData icon) {
     return Padding(
@@ -623,10 +657,12 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
     );
   }
 
-  Future<void> _handleApproveChore(String choreId, String childId, int points) async {
+  Future<void> _handleApproveChore(
+      String choreId, String childId, int points) async {
     try {
-      await Provider.of<ChoreState>(context, listen: false).approveChore(choreId, childId);
-      
+      await Provider.of<ChoreState>(context, listen: false)
+          .approveChore(choreId, childId);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Chore approved and points awarded!')),
       );
@@ -673,7 +709,8 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                 value: selectedPriority,
                 items: const [
                   DropdownMenuItem(value: 'high', child: Text('High Priority')),
-                  DropdownMenuItem(value: 'medium', child: Text('Medium Priority')),
+                  DropdownMenuItem(
+                      value: 'medium', child: Text('Medium Priority')),
                   DropdownMenuItem(value: 'low', child: Text('Low Priority')),
                 ],
                 onChanged: (value) {
@@ -695,7 +732,8 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                     selectedDate = picked;
                   }
                 },
-                child: Text('Select Deadline: ${selectedDate.toString().split(' ')[0]}'),
+                child: Text(
+                    'Select Deadline: ${selectedDate.toString().split(' ')[0]}'),
               ),
             ],
           ),
@@ -712,7 +750,8 @@ class _ParentDashboardState extends State<ParentDashboard> with SingleTickerProv
                   rewardController.text.isNotEmpty) {
                 Provider.of<ChoreState>(context, listen: false).addChore(
                   Chore(
-                    id: DateTime.now().toString(), // This ID will be replaced by Firestore
+                    id: DateTime.now()
+                        .toString(), // This ID will be replaced by Firestore
                     title: titleController.text,
                     description: descriptionController.text,
                     deadline: selectedDate,
