@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/chore_state.dart';
 import '../models/reward_state.dart';
+import '../models/user_state.dart';
 import 'parent/parent_dashboard.dart';
 import 'child/child_dashboard.dart';
 
@@ -17,6 +18,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  final _parentFormKey = GlobalKey<FormState>();
+  final _childFormKey = GlobalKey<FormState>();
   late TabController _tabController;
   bool _isLoading = false;
   String? _errorMessage;
@@ -143,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Form(
-              key: _formKey,
+              key: _parentFormKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -302,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Form(
-              key: _formKey,
+              key: _childFormKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -424,7 +427,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   Future<void> _handleParentSubmit() async {
     try {
-      if (_formKey.currentState!.validate()) {
+      if (_parentFormKey.currentState!.validate()) {
         setState(() {
           _isLoading = true;
           _errorMessage = null;
@@ -437,17 +440,30 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             _passwordController.text.trim(),
           );
           
-          // Create a new family
-          final familyRef = await _firestoreService.createFamily(
-            credential.user!.uid,
-            'Family ${_nameController.text}',
-          );
+          // Create a new family (use test family for debugging)
+          final createTestFamily = _emailController.text.trim().contains('test');
+          final familyRef = createTestFamily
+              ? await _firestoreService.createTestFamily(
+                  credential.user!.uid,
+                  'Test Family ${_nameController.text}',
+                )
+              : await _firestoreService.createFamily(
+                  credential.user!.uid,
+                  'Family ${_nameController.text}',
+                );
+          
+          // Show family code for testing
+          if (createTestFamily) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Created test family with code: TEST-1234')),
+            );
+          }
           
           // Create user profile
-          await _firestoreService.createUserProfile(
+          await _firestoreService.createParentProfile(
             credential.user!.uid,
             _nameController.text,
-            true,
+            _emailController.text,
             familyId: familyRef.id,
           );
           
@@ -517,46 +533,31 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   Future<void> _handleChildLogin() async {
     try {
-      if (_formKey.currentState!.validate()) {
+      if (_childFormKey.currentState!.validate()) {
         setState(() {
           _isLoading = true;
           _errorMessage = null;
         });
 
-        // Find family by code
-        final familySnapshot = await _firestoreService.findFamilyByCode(
-          _familyCodeController.text.trim(),
-        );
+        final childName = _childNameController.text.trim();
+        final familyCode = _familyCodeController.text.trim();
         
-        if (familySnapshot.docs.isEmpty) {
-          throw Exception('Invalid family code. Please check and try again.');
+        // Use the UserState provider to find or create the child
+        final userState = Provider.of<UserState>(context, listen: false);
+        final child = await userState.findOrCreateChild(childName, familyCode);
+        
+        if (child == null) {
+          throw Exception('Failed to find or create child profile');
         }
         
-        final familyDoc = familySnapshot.docs.first;
-        final familyId = familyDoc.id;
-        
-        // Generate a "virtual" ID for the child based on family code and name
-        // This avoids needing authentication for children
-        final childId = '${familyId}_${_childNameController.text.hashCode}';
-        
-        // Check if child profile exists, create if not
-        final childDocRef = _firestoreService.users.doc(childId);
-        final childDoc = await childDocRef.get();
-        
-        if (!childDoc.exists) {
-          // Create child profile
-          await _firestoreService.createUserProfile(
-            childId,
-            _childNameController.text,
-            false, // not a parent
-            familyId: familyId,
-          );
-          
-          // Add child to family
-          await _firestoreService.addChildToFamily(familyId, childId);
-        }
+        // Set family ID for the state providers
+        final familyId = child.familyId;
         
         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Welcome, ${child.name}! You have ${child.points} points.')),
+          );
+          
           // Initialize data for state providers
           final choreState = Provider.of<ChoreState>(context, listen: false);
           choreState.setFamilyId(familyId);
@@ -566,10 +567,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           rewardState.setFamilyId(familyId);
           await rewardState.loadRewards();
           
-          // Store child ID in a global variable or pass to dashboard
+          // Navigate to child dashboard
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => ChildDashboard(childId: childId),
+              builder: (context) => ChildDashboard(childId: child.id),
             ),
           );
         }
@@ -580,6 +581,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           _errorMessage = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
           _isLoading = false;
         });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login error: ${e.toString()}')),
+        );
       }
     } finally {
       if (mounted && _isLoading) {

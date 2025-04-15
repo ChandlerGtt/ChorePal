@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/chore_state.dart';
 import '../../models/reward_state.dart';
+import '../../models/milestone.dart';
 import '../../widgets/chore_card.dart';
 import '../../widgets/reward_card.dart';
+import '../../widgets/milestone_dialog.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../login_screen.dart';
+import '../reward_history_screen.dart';
 
 class ChildDashboard extends StatefulWidget {
   final String childId;
@@ -24,8 +27,10 @@ class ChildDashboard extends StatefulWidget {
 class _ChildDashboardState extends State<ChildDashboard> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final FirestoreService _firestoreService = FirestoreService();
+  final MilestoneManager _milestoneManager = MilestoneManager();
   int _points = 0;
   bool _isLoading = true;
+  int _lastPoints = 0; // Track previous points for milestone detection
 
   @override
   void initState() {
@@ -36,18 +41,36 @@ class _ChildDashboardState extends State<ChildDashboard> with SingleTickerProvid
 
   Future<void> _loadPoints() async {
     try {
+      // Save previous points for milestone detection
+      _lastPoints = _points;
+      
       final points = await _firestoreService.getChildPoints(widget.childId);
       if (mounted) {
         setState(() {
           _points = points;
           _isLoading = false;
         });
+        
+        // Check for milestone achievements
+        _checkMilestones();
       }
     } catch (e) {
       print('Error loading points: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
+        });
+      }
+    }
+  }
+  
+  void _checkMilestones() {
+    if (_lastPoints != _points) {
+      final milestone = _milestoneManager.checkNewMilestone(_lastPoints, _points);
+      if (milestone != null && mounted) {
+        // Show celebration dialog for the new milestone
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          MilestoneCelebrationDialog.show(context, milestone, _points);
         });
       }
     }
@@ -65,6 +88,19 @@ class _ChildDashboardState extends State<ChildDashboard> with SingleTickerProvid
       appBar: AppBar(
         title: const Text('My ChorePal'),
         actions: [
+          // History button
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Reward History',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => RewardHistoryScreen(childId: widget.childId),
+                ),
+              );
+            },
+          ),
+          // Points display
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Chip(
@@ -72,6 +108,7 @@ class _ChildDashboardState extends State<ChildDashboard> with SingleTickerProvid
               backgroundColor: Colors.green.shade100,
             ),
           ),
+          // Logout button
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
@@ -110,7 +147,9 @@ class _ChildDashboardState extends State<ChildDashboard> with SingleTickerProvid
         
         // Filter chores for this child
         final myChores = choreState.chores.where((chore) => 
-          !chore.isCompleted).toList();
+          !chore.isCompleted && 
+          (chore.assignedTo.isEmpty || chore.assignedTo.contains(widget.childId))
+        ).toList();
         
         if (myChores.isEmpty) {
           return const Center(
@@ -131,9 +170,23 @@ class _ChildDashboardState extends State<ChildDashboard> with SingleTickerProvid
                 chore: chore,
                 isChild: true,
                 onToggleComplete: (id) async {
-                  await Provider.of<ChoreState>(context, listen: false)
-                      .toggleChoreCompletion(id);
-                  await _loadPoints();
+                  try {
+                    await Provider.of<ChoreState>(context, listen: false)
+                        .markChoreAsPendingApproval(id, widget.childId);
+                    
+                    // Check if the widget is still mounted before showing SnackBar
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Chore marked as completed! Waiting for parent approval.')),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: ${e.toString()}')),
+                      );
+                    }
+                  }
                 },
               );
             },
@@ -235,19 +288,27 @@ class _ChildDashboardState extends State<ChildDashboard> with SingleTickerProvid
 
   Future<void> _handleRedeemReward(String rewardId, int pointsRequired) async {
     try {
+      // Save current points for milestone detection
+      _lastPoints = _points;
+      
       await Provider.of<RewardState>(context, listen: false)
-        .redeemReward(rewardId, widget.childId, pointsRequired);
+        .redeemReward(rewardId, widget.childId);
       
       // Refresh points
       await _loadPoints();
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reward redeemed successfully!')),
-      );
+      // Check if the widget is still mounted before showing SnackBar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reward redeemed successfully!')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}')),
+        );
+      }
     }
   }
 }

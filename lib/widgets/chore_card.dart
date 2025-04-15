@@ -7,6 +7,7 @@ class ChoreCard extends StatelessWidget {
   final bool isChild;
   final Function(String)? onToggleComplete;
   final Function(String, String, int)? onApprove;
+  final Function(Chore)? onAssign;
 
   const ChoreCard({
     Key? key,
@@ -14,6 +15,7 @@ class ChoreCard extends StatelessWidget {
     this.isChild = false,
     this.onToggleComplete,
     this.onApprove,
+    this.onAssign,
   }) : super(key: key);
 
   @override
@@ -23,7 +25,7 @@ class ChoreCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: _getPriorityColor(chore.priority),
+          color: _getBorderColor(),
           width: 2,
         ),
       ),
@@ -42,8 +44,10 @@ class ChoreCard extends StatelessWidget {
                       Text(
                         chore.title,
                         style: Theme.of(context).textTheme.titleLarge,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      Row(
+                      Wrap(
+                        spacing: 8.0,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -62,25 +66,52 @@ class ChoreCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (chore.isPendingApproval) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'Awaiting Approval',
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (chore.assignedTo.isNotEmpty && !chore.isPendingApproval && !chore.isCompleted) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Assigned: ${chore.assignedTo.length}',
+                                style: const TextStyle(
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],
                   ),
                 ),
-                if (isChild && !chore.isCompleted)
-                  Checkbox(
-                    value: chore.isCompleted,
-                    onChanged: (bool? value) {
-                      if (onToggleComplete != null) {
-                        onToggleComplete!(chore.id);
-                      }
-                    },
-                  ),
-                if (!isChild && chore.isCompleted && onApprove != null)
-                  ElevatedButton(
-                    onPressed: () => onApprove!(chore.id, "childId", int.parse(chore.reward)),
-                    child: const Text('Approve'),
-                  ),
+                _buildActionButton(),
               ],
             ),
             const SizedBox(height: 8),
@@ -90,7 +121,7 @@ class ChoreCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Reward: ${chore.reward} points',
+                  'Reward: ${chore.pointValue} points',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
@@ -109,6 +140,60 @@ class ChoreCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildActionButton() {
+    // If it's the child view and chore is not completed or pending approval
+    if (isChild && !chore.isCompleted && !chore.isPendingApproval) {
+      return Checkbox(
+        value: false,
+        onChanged: (bool? value) {
+          if (onToggleComplete != null) {
+            onToggleComplete!(chore.id);
+          }
+        },
+      );
+    }
+    
+    // If it's the parent view and chore is pending approval
+    if (!isChild && chore.isPendingApproval && onApprove != null) {
+      return ElevatedButton(
+        onPressed: () => onApprove!(chore.id, chore.completedBy!, chore.pointValue),
+        child: const Text('Approve'),
+      );
+    }
+    
+    // If it's the parent view and chore is not completed or pending
+    if (!isChild && !chore.isCompleted && !chore.isPendingApproval && onAssign != null) {
+      return IconButton(
+        icon: const Icon(Icons.person_add),
+        tooltip: 'Assign to child',
+        onPressed: () => onAssign!(chore),
+      );
+    }
+    
+    // For completed chores or pending chores in child view
+    if (chore.isPendingApproval && isChild) {
+      return const Icon(Icons.hourglass_top, color: Colors.orange);
+    }
+    
+    if (chore.isCompleted) {
+      return const Icon(Icons.check_circle, color: Colors.green);
+    }
+    
+    return const SizedBox.shrink();
+  }
+
+  Color _getBorderColor() {
+    if (chore.isCompleted) {
+      return Colors.green;
+    }
+    
+    if (chore.isPendingApproval) {
+      return Colors.orange;
+    }
+    
+    return _getPriorityColor(chore.priority);
   }
 
   Color _getPriorityColor(String priority) {
