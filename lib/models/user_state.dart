@@ -98,10 +98,16 @@ class UserState extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
       
+      // Clean and validate the family code
+      final cleanedCode = familyCode.trim().replaceAll(' ', '');
+      if (cleanedCode.length != 6 || !RegExp(r'^\d{6}$').hasMatch(cleanedCode)) {
+        throw Exception('Invalid family code format. Please enter 6 digits');
+      }
+      
       // Find family by code
-      final familySnapshot = await _firestoreService.findFamilyByCode(familyCode);
+      final familySnapshot = await _firestoreService.findFamilyByCode(cleanedCode);
       if (familySnapshot.docs.isEmpty) {
-        throw Exception('Invalid family code');
+        throw Exception('Invalid family code. Please check with your parent');
       }
       
       final familyDoc = familySnapshot.docs.first;
@@ -123,7 +129,7 @@ class UserState extends ChangeNotifier {
       return await loadChildUser(childId);
     } catch (e) {
       print('Error finding or creating child: $e');
-      return null;
+      rethrow; // Rethrow to show the proper error message
     } finally {
       _isLoading = false;
       notifyListeners();

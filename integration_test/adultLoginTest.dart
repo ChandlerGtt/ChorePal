@@ -4,11 +4,14 @@ import 'package:chore_pal/main.dart' as app;
 
 /*
 
-simply login test for adult account with the following creds:
+notes for the following test:
+I should be able to enter login information for the following person
+
 name: john
-email: john@exmaple.com <- this might change for testing email notifications
+email: john@example.com
 password: password!1234
 
+and just land on the interface
 
  */
 
@@ -20,11 +23,18 @@ void main() {
     app.main();
     await tester.pumpAndSettle(); // wait for all animations
 
+    await Future.delayed(const Duration(seconds:2));
+
+
+
     // Find the Login button and tap it
     final loginButton = find.text('Login');
     expect(loginButton, findsOneWidget);
 
+    await Future.delayed(const Duration(seconds: 2));
+
     await tester.tap(loginButton);
     await tester.pumpAndSettle(); // wait for any resulting animations
+
   });
 }

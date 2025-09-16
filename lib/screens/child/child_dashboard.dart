@@ -7,10 +7,10 @@ import '../../models/milestone.dart';
 import '../../widgets/chore_card.dart';
 import '../../widgets/reward_card.dart';
 import '../../widgets/milestone_dialog.dart';
-import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../login_screen.dart';
 import '../reward_history_screen.dart';
+import '../chore_history_screen.dart';
 
 class ChildDashboard extends StatefulWidget {
   final String childId;
@@ -88,17 +88,47 @@ class _ChildDashboardState extends State<ChildDashboard> with SingleTickerProvid
       appBar: AppBar(
         title: const Text('My ChorePal'),
         actions: [
-          // History button
-          IconButton(
+          // History button with dropdown menu
+          PopupMenuButton<String>(
+            tooltip: 'History',
             icon: const Icon(Icons.history),
-            tooltip: 'Reward History',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => RewardHistoryScreen(childId: widget.childId),
-                ),
-              );
+            onSelected: (value) {
+              if (value == 'chores') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => ChoreHistoryScreen(childId: widget.childId),
+                  ),
+                );
+              } else if (value == 'rewards') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => RewardHistoryScreen(childId: widget.childId),
+                  ),
+                );
+              }
             },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'chores',
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text('My Completed Chores'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'rewards',
+                child: Row(
+                  children: [
+                    Icon(Icons.card_giftcard, color: Colors.purple),
+                    SizedBox(width: 8),
+                    Text('My Redeemed Rewards'),
+                  ],
+                ),
+              ),
+            ],
           ),
           // Points display
           Padding(
@@ -118,18 +148,45 @@ class _ChildDashboardState extends State<ChildDashboard> with SingleTickerProvid
             },
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'My Chores', icon: Icon(Icons.checklist)),
-            Tab(text: 'Rewards', icon: Icon(Icons.card_giftcard)),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Material(
+            color: Theme.of(context).primaryColor,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.6),
+              indicatorColor: Colors.white,
+              indicatorWeight: 3,
+              labelStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+                color: Colors.white,
+              ),
+              tabs: const [
+                Tab(
+                  icon: Icon(Icons.checklist),
+                  text: 'My Chores',
+                ),
+                Tab(
+                  icon: Icon(Icons.card_giftcard),
+                  text: 'Rewards',
+                ),
+              ],
+            ),
+          ),
         ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : TabBarView(
               controller: _tabController,
+              physics: const NeverScrollableScrollPhysics(),
               children: [
                 _buildChoresTab(),
                 _buildRewardsTab(),

@@ -34,41 +34,70 @@ class ChoreApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF4CAF50);
+    const primaryColorDark = Color(0xFF388E3C);
+    const secondaryColor = Color(0xFF2196F3);
+    const backgroundColor = Color(0xFFF5F5F5);
+    const textColor = Color(0xFF333333);
+    
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ChorePal',
       theme: ThemeData(
+        useMaterial3: false, // Ensure consistent behavior across app
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
-          primary: const Color(0xFF4CAF50),
-          secondary: const Color(0xFF2196F3),
+          seedColor: primaryColor,
+          primary: primaryColor,
+          secondary: secondaryColor,
           surface: Colors.white,
-          background: const Color(0xFFF5F5F5),
+          background: backgroundColor,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+        scaffoldBackgroundColor: backgroundColor,
+        // App bar theme
+        appBarTheme: const AppBarTheme(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+        // Tab bar theme - keep it simple and focused on preventing overlay
+        tabBarTheme: const TabBarThemeData(
+          labelColor: Colors.white,
+          unselectedLabelColor: Color(0xDDFFFFFF),
+          indicatorColor: Colors.white,
+          indicatorSize: TabBarIndicatorSize.tab,
+          labelPadding: EdgeInsets.symmetric(horizontal: 8),
+        ),
+        // General text theme
         textTheme: const TextTheme(
           displayLarge: TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF333333),
+            color: textColor,
           ),
           displayMedium: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF333333),
+            color: textColor,
           ),
           bodyLarge: TextStyle(
             fontSize: 16,
-            color: Color(0xFF333333),
+            color: textColor,
           ),
           bodyMedium: TextStyle(
             fontSize: 14,
             color: Color(0xFF666666),
           ),
         ),
+        // Button theme
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF4CAF50),
+            backgroundColor: primaryColor,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
             shape: RoundedRectangleBorder(
@@ -77,14 +106,16 @@ class ChoreApp extends StatelessWidget {
             elevation: 2,
           ),
         ),
+        // Form field theme
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: Color(0xFF4CAF50), width: 2),
+            borderSide: const BorderSide(color: primaryColor, width: 2),
           ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
       home: const LoginScreen(),
