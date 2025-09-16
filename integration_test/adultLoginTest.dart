@@ -3,6 +3,19 @@ import 'package:integration_test/integration_test.dart';
 import 'package:flutter/material.dart';
 import 'package:chore_pal/main.dart' as app;
 
+/*
+
+notes for the following test:
+I should be able to enter login information for the following person
+
+name: john
+email: john@example.com
+password: password!1234
+
+and just land on the interface
+
+ */
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -43,5 +56,6 @@ void main() {
 
     await tester.tap(loginButton);
     await tester.pumpAndSettle(); // wait for any resulting animations
+
   });
 }
