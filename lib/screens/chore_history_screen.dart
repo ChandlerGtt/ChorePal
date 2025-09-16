@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/reward.dart';
-import '../models/reward_state.dart';
+import '../models/chore.dart';
+import '../models/chore_state.dart';
 import '../models/user_state.dart';
 import 'package:intl/intl.dart';
 
-class RewardHistoryScreen extends StatelessWidget {
+class ChoreHistoryScreen extends StatelessWidget {
   final String? childId; // Optional - if passed, shows only this child's history
 
-  const RewardHistoryScreen({Key? key, this.childId}) : super(key: key);
+  const ChoreHistoryScreen({Key? key, this.childId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(childId != null ? 'My Reward History' : 'Family Reward History'),
+        title: Text(childId != null ? 'My Chore History' : 'Family Chore History'),
       ),
-      body: Consumer2<RewardState, UserState>(
-        builder: (context, rewardState, userState, child) {
-          final rewards = rewardState.getRewardHistory(childId: childId);
+      body: Consumer2<ChoreState, UserState>(
+        builder: (context, choreState, userState, child) {
+          final completedChores = _getCompletedChores(choreState);
           
-          if (rewards.isEmpty) {
+          if (completedChores.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -28,12 +28,12 @@ class RewardHistoryScreen extends StatelessWidget {
                   Icon(Icons.history, size: 64, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
-                    'No reward history yet',
+                    'No chore history yet',
                     style: TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Redeemed rewards will appear here',
+                    'Completed chores will appear here',
                     style: TextStyle(color: Colors.grey),
                   ),
                 ],
@@ -41,19 +41,19 @@ class RewardHistoryScreen extends StatelessWidget {
             );
           }
           
-          // Group rewards by month
-          final groupedRewards = _groupRewardsByMonth(rewards);
+          // Group chores by month
+          final groupedChores = _groupChoresByMonth(completedChores);
           
           return RefreshIndicator(
             onRefresh: () async {
-              await rewardState.loadRewards();
+              await choreState.loadChores();
             },
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: groupedRewards.length,
+              itemCount: groupedChores.length,
               itemBuilder: (context, index) {
-                final monthKey = groupedRewards.keys.elementAt(index);
-                final monthRewards = groupedRewards[monthKey]!;
+                final monthKey = groupedChores.keys.elementAt(index);
+                final monthChores = groupedChores[monthKey]!;
                 
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,15 +70,15 @@ class RewardHistoryScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    // Month rewards
+                    // Month chores
                     ListView.builder(
                       physics: const NeverScrollableScrollPhysics(),
                       shrinkWrap: true,
-                      itemCount: monthRewards.length,
-                      itemBuilder: (context, rewardIndex) {
+                      itemCount: monthChores.length,
+                      itemBuilder: (context, choreIndex) {
                         return _buildCompactHistoryItem(
                           context, 
-                          monthRewards[rewardIndex], 
+                          monthChores[choreIndex], 
                           userState,
                         );
                       },
@@ -95,19 +95,30 @@ class RewardHistoryScreen extends StatelessWidget {
     );
   }
   
-  // Group rewards by month
-  Map<String, List<Reward>> _groupRewardsByMonth(List<Reward> rewards) {
-    final Map<String, List<Reward>> grouped = {};
+  // Get completed chores, filtering by childId if provided
+  List<Chore> _getCompletedChores(ChoreState choreState) {
+    if (childId != null) {
+      return choreState.completedChores
+          .where((chore) => chore.completedBy == childId)
+          .toList();
+    } else {
+      return choreState.completedChores;
+    }
+  }
+  
+  // Group chores by month
+  Map<String, List<Chore>> _groupChoresByMonth(List<Chore> chores) {
+    final Map<String, List<Chore>> grouped = {};
     
-    for (final reward in rewards) {
-      if (reward.redeemedAt != null) {
-        final monthKey = DateFormat('MMMM yyyy').format(reward.redeemedAt!);
+    for (final chore in chores) {
+      if (chore.completedAt != null) {
+        final monthKey = DateFormat('MMMM yyyy').format(chore.completedAt!);
         
         if (!grouped.containsKey(monthKey)) {
           grouped[monthKey] = [];
         }
         
-        grouped[monthKey]!.add(reward);
+        grouped[monthKey]!.add(chore);
       }
     }
     
@@ -120,7 +131,7 @@ class RewardHistoryScreen extends StatelessWidget {
       });
     
     // Create a new map with the sorted keys
-    final Map<String, List<Reward>> sortedGrouped = {};
+    final Map<String, List<Chore>> sortedGrouped = {};
     for (final key in sortedKeys) {
       sortedGrouped[key] = grouped[key]!;
     }
@@ -130,52 +141,67 @@ class RewardHistoryScreen extends StatelessWidget {
 
   Widget _buildCompactHistoryItem(
     BuildContext context, 
-    Reward reward, 
+    Chore chore, 
     UserState userState
   ) {
     // Find the child name if available
     String? childName;
-    if (reward.redeemedBy != null) {
-      final child = userState.getChildById(reward.redeemedBy!);
+    if (chore.completedBy != null) {
+      final child = userState.getChildById(chore.completedBy!);
       childName = child?.name;
     }
+    
+    // Get priority color
+    final priorityColor = _getPriorityColor(chore.priority);
     
     return Card(
       elevation: 1,
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: _getTierColor(reward.tier).withOpacity(0.2),
+          backgroundColor: priorityColor.withOpacity(0.2),
           child: Icon(
-            Icons.card_giftcard,
-            color: _getTierColor(reward.tier),
+            Icons.check_circle,
+            color: priorityColor,
           ),
         ),
         title: Text(
-          reward.title,
+          chore.title,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (chore.description.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                chore.description,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade700,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
             const SizedBox(height: 4),
             Row(
               children: [
                 Icon(Icons.star, size: 14, color: Colors.amber.shade700),
                 const SizedBox(width: 4),
                 Text(
-                  '${reward.pointsRequired} points',
+                  '${chore.pointValue} points',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade700,
                   ),
                 ),
                 const SizedBox(width: 12),
-                if (reward.redeemedAt != null) ...[
+                if (chore.completedAt != null) ...[
                   Icon(Icons.calendar_today, size: 14, color: Colors.blue.shade700),
                   const SizedBox(width: 4),
                   Text(
-                    DateFormat('MMM d').format(reward.redeemedAt!),
+                    DateFormat('MMM d').format(chore.completedAt!),
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade700,
@@ -208,13 +234,13 @@ class RewardHistoryScreen extends StatelessWidget {
             vertical: 4,
           ),
           decoration: BoxDecoration(
-            color: _getTierColor(reward.tier).withOpacity(0.2),
+            color: priorityColor.withOpacity(0.2),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            reward.tier.toUpperCase(),
+            chore.priority.toUpperCase(),
             style: TextStyle(
-              color: _getTierColor(reward.tier),
+              color: priorityColor,
               fontWeight: FontWeight.bold,
               fontSize: 10,
             ),
@@ -224,16 +250,16 @@ class RewardHistoryScreen extends StatelessWidget {
     );
   }
 
-  Color _getTierColor(String tier) {
-    switch (tier.toLowerCase()) {
-      case 'gold':
-        return Colors.amber.shade700;
-      case 'silver':
-        return Colors.blueGrey.shade400;
-      case 'bronze':
-        return Colors.brown.shade400;
+  Color _getPriorityColor(String priority) {
+    switch (priority.toLowerCase()) {
+      case 'high':
+        return Colors.red;
+      case 'medium':
+        return Colors.orange;
+      case 'low':
+        return Colors.green;
       default:
-        return Colors.grey;
+        return Colors.blue;
     }
   }
 } 

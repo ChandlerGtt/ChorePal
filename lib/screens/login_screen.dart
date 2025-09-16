@@ -9,6 +9,7 @@ import '../models/user_state.dart';
 import 'parent/parent_dashboard.dart';
 import 'child/child_dashboard.dart';
 
+/// Login screen for the ChorePal app.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -17,23 +18,28 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
-  final _formKey = GlobalKey<FormState>();
+  // Form keys
   final _parentFormKey = GlobalKey<FormState>();
   final _childFormKey = GlobalKey<FormState>();
+  
+  // Tab controller
   late TabController _tabController;
+  
+  // State variables
   bool _isLoading = false;
   String? _errorMessage;
+  bool _isRegistering = false;
   
   // Parent login fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
-  bool _isRegistering = false;
   
   // Child login fields
   final _childNameController = TextEditingController();
   final _familyCodeController = TextEditingController();
   
+  // Services
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
 
@@ -67,61 +73,12 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       body: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 40),
-            Icon(
-              Icons.check_circle_outline,
-              size: 70,
-              color: _primaryColor,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'ChorePal',
-              style: TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-                color: _textColor,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Helping families manage chores together',
-              style: TextStyle(
-                fontSize: 16,
-                color: _textColor.withOpacity(0.7),
-              ),
-            ),
-            const SizedBox(height: 30),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              margin: const EdgeInsets.symmetric(horizontal: 50),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: _primaryColor,
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                labelColor: Colors.white,
-                unselectedLabelColor: _textColor,
-                tabs: const [
-                  Tab(text: 'Parent'),
-                  Tab(text: 'Child'),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
+            _buildHeader(),
+            _buildTabSelector(),
             Expanded(
               child: TabBarView(
                 controller: _tabController,
+                physics: const NeverScrollableScrollPhysics(),
                 children: [
                   _buildParentLoginForm(),
                   _buildChildLoginForm(),
@@ -134,6 +91,83 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+  /// Builds the app header with logo and title
+  Widget _buildHeader() {
+    return Column(
+      children: [
+        const SizedBox(height: 40),
+        Icon(
+          Icons.check_circle_outline,
+          size: 70,
+          color: _primaryColor,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'ChorePal',
+          style: TextStyle(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: _textColor,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Helping families manage chores together',
+          style: TextStyle(
+            fontSize: 16,
+            color: _textColor.withOpacity(0.7),
+          ),
+        ),
+        const SizedBox(height: 30),
+      ],
+    );
+  }
+
+  /// Builds the tab selector
+  Widget _buildTabSelector() {
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 5,
+            spreadRadius: 1,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 50),
+      child: Material(
+        color: Colors.transparent,
+        child: TabBar(
+          controller: _tabController,
+          indicator: BoxDecoration(
+            color: Theme.of(context).primaryColor,
+            borderRadius: BorderRadius.circular(25),
+          ),
+          labelColor: Colors.white,
+          unselectedLabelColor: _textColor,
+          labelStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.normal,
+          ),
+          tabs: const [
+            Tab(text: 'Parent'),
+            Tab(text: 'Child'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Builds the parent login form
   Widget _buildParentLoginForm() {
     return SingleChildScrollView(
       child: Padding(
@@ -160,130 +194,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  if (_isRegistering) ...[
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Your Name',
-                        prefixIcon: Icon(Icons.person, color: _primaryColor),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(color: _primaryColor, width: 2),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your name';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email, color: _primaryColor),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: _primaryColor, width: 2),
-                      ),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
+                  if (_isRegistering) 
+                    _buildNameField(),
+                  _buildEmailField(),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock, color: _primaryColor),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: _primaryColor, width: 2),
-                      ),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (_isRegistering && value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.red.shade200),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
+                  _buildPasswordField(),
+                  if (_errorMessage != null)
+                    _buildErrorMessage(),
                   const SizedBox(height: 24),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2,
-                    ),
-                    onPressed: _isLoading ? null : _handleParentSubmit,
-                    child: _isLoading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 3,
-                            ),
-                          )
-                        : Text(
-                            _isRegistering ? 'Register' : 'Login',
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                  ),
+                  _buildParentActionButton(),
                   const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: _isLoading ? null : _toggleParentAuthMode,
-                    child: Text(
-                      _isRegistering
-                          ? 'Already have an account? Login'
-                          : 'Create a new account',
-                      style: TextStyle(color: _accentColor),
-                    ),
-                  ),
+                  _buildToggleAuthModeButton(),
                 ],
               ),
             ),
@@ -293,6 +214,170 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+  /// Builds the name field for parent registration
+  Widget _buildNameField() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _nameController,
+          decoration: InputDecoration(
+            labelText: 'Your Name',
+            prefixIcon: Icon(Icons.person, color: _primaryColor),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: _primaryColor, width: 2),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your name';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  /// Builds the email field
+  Widget _buildEmailField() {
+    return TextFormField(
+      controller: _emailController,
+      decoration: InputDecoration(
+        labelText: 'Email',
+        prefixIcon: Icon(Icons.email, color: _primaryColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: _primaryColor, width: 2),
+        ),
+      ),
+      keyboardType: TextInputType.emailAddress,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter your email';
+        }
+        if (!value.contains('@')) {
+          return 'Please enter a valid email';
+        }
+        return null;
+      },
+    );
+  }
+
+  /// Builds the password field
+  Widget _buildPasswordField() {
+    return TextFormField(
+      controller: _passwordController,
+      decoration: InputDecoration(
+        labelText: 'Password',
+        prefixIcon: Icon(Icons.lock, color: _primaryColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: _primaryColor, width: 2),
+        ),
+      ),
+      obscureText: true,
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter your password';
+        }
+        if (_isRegistering && value.length < 6) {
+          return 'Password must be at least 6 characters';
+        }
+        return null;
+      },
+    );
+  }
+
+  /// Builds the error message display
+  Widget _buildErrorMessage() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      margin: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red.shade700),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: TextStyle(color: Colors.red.shade700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the parent login/register button
+  Widget _buildParentActionButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _primaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          elevation: 2,
+        ),
+        onPressed: _isLoading ? null : _handleParentSubmit,
+        child: _isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(_isRegistering ? Icons.person_add : Icons.login),
+                  const SizedBox(width: 8),
+                  Text(
+                    _isRegistering ? 'Create Account' : 'Login',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  /// Builds the toggle button to switch between login and register
+  Widget _buildToggleAuthModeButton() {
+    return TextButton(
+      onPressed: _isLoading ? null : _toggleParentAuthMode,
+      child: Text(
+        _isRegistering
+            ? 'Already have an account? Login'
+            : 'Create a new account',
+        style: TextStyle(color: _accentColor),
+      ),
+    );
+  }
+
+  /// Builds the child login form
   Widget _buildChildLoginForm() {
     return SingleChildScrollView(
       child: Padding(
@@ -319,96 +404,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _childNameController,
-                    decoration: InputDecoration(
-                      labelText: 'Your Name',
-                      prefixIcon: Icon(Icons.person, color: _primaryColor),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: _primaryColor, width: 2),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your name';
-                      }
-                      return null;
-                    },
-                  ),
+                  _buildChildNameField(),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _familyCodeController,
-                    decoration: InputDecoration(
-                      labelText: 'Family Code',
-                      prefixIcon: Icon(Icons.home, color: _primaryColor),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(color: _primaryColor, width: 2),
-                      ),
-                      hintText: 'Example: FAM-1234',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your family code';
-                      }
-                      return null;
-                    },
-                  ),
+                  _buildFamilyCodeField(),
+                  const SizedBox(height: 16),
                   if (_errorMessage != null) ...[
+                    _buildChildErrorMessage(),
                     const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.red.shade200),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
                   ],
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2,
-                    ),
-                    onPressed: _isLoading ? null : _handleChildLogin,
-                    child: _isLoading
-                        ? SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 3,
-                            ),
-                          )
-                        : const Text(
-                            'Login',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Ask your parent for the family code',
-                    style: TextStyle(color: _textColor.withOpacity(0.6)),
-                    textAlign: TextAlign.center,
-                  ),
+                  _buildChildLoginButton(),
                 ],
               ),
             ),
@@ -418,6 +422,153 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+  /// Displays the error message in the child form
+  Widget _buildChildErrorMessage() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red.shade700),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: TextStyle(color: Colors.red.shade700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the child name field
+  Widget _buildChildNameField() {
+    return TextFormField(
+      controller: _childNameController,
+      decoration: InputDecoration(
+        labelText: 'Your Name',
+        labelStyle: TextStyle(
+          color: _primaryColor,
+          fontWeight: FontWeight.w500,
+        ),
+        prefixIcon: Icon(Icons.person, color: _primaryColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: _primaryColor, width: 2),
+        ),
+        hintText: 'Enter your name',
+        filled: true,
+        fillColor: Colors.white,
+      ),
+      textCapitalization: TextCapitalization.words,
+      style: const TextStyle(
+        fontSize: 16,
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please enter your name';
+        }
+        return null;
+      },
+    );
+  }
+
+  /// Builds the family code field
+  Widget _buildFamilyCodeField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _familyCodeController,
+          decoration: InputDecoration(
+            labelText: 'Family Code',
+            labelStyle: TextStyle(
+              color: _primaryColor,
+              fontWeight: FontWeight.w500,
+            ),
+            prefixIcon: Icon(Icons.numbers, color: _primaryColor),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: _primaryColor, width: 2),
+            ),
+            hintText: 'Enter 6-digit code',
+            helperText: 'Ask your parent for the 6-digit family code',
+            counterText: '',
+          ),
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 20,
+            letterSpacing: 8,
+            fontWeight: FontWeight.bold,
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter your family code';
+            }
+            if (value.length != 6 || !RegExp(r'^\d{6}$').hasMatch(value)) {
+              return 'Code must be 6 digits';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Builds the child login button
+  Widget _buildChildLoginButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _primaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          elevation: 2,
+        ),
+        onPressed: _isLoading ? null : _handleChildLogin,
+        child: _isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
+              )
+            : const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.login),
+                  SizedBox(width: 8),
+                  Text(
+                    'Join Family',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  /// Toggles between parent login and registration modes
   void _toggleParentAuthMode() {
     setState(() {
       _isRegistering = !_isRegistering;
@@ -425,6 +576,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     });
   }
 
+  /// Handles parent login or registration submission
   Future<void> _handleParentSubmit() async {
     try {
       if (_parentFormKey.currentState!.validate()) {
@@ -434,85 +586,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         });
 
         if (_isRegistering) {
-          // Register new parent
-          final credential = await _authService.registerWithEmailAndPassword(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
-          );
-          
-          // Create a new family (use test family for debugging)
-          final createTestFamily = _emailController.text.trim().contains('test');
-          final familyRef = createTestFamily
-              ? await _firestoreService.createTestFamily(
-                  credential.user!.uid,
-                  'Test Family ${_nameController.text}',
-                )
-              : await _firestoreService.createFamily(
-                  credential.user!.uid,
-                  'Family ${_nameController.text}',
-                );
-          
-          // Show family code for testing
-          if (createTestFamily) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Created test family with code: TEST-1234')),
-            );
-          }
-          
-          // Create user profile
-          await _firestoreService.createParentProfile(
-            credential.user!.uid,
-            _nameController.text,
-            _emailController.text,
-            familyId: familyRef.id,
-          );
-          
-          if (mounted) {
-            // Initialize data for state providers
-            final choreState = Provider.of<ChoreState>(context, listen: false);
-            choreState.setFamilyId(familyRef.id);
-            await choreState.loadChores();
-            
-            final rewardState = Provider.of<RewardState>(context, listen: false);
-            rewardState.setFamilyId(familyRef.id);
-            await rewardState.loadRewards();
-            
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const ParentDashboard()),
-            );
-          }
+          await _handleParentRegistration();
         } else {
-          // Login existing parent
-          final credential = await _authService.signInWithEmailAndPassword(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
-          );
-          
-          // Get user data
-          final userDoc = await _firestoreService.users.doc(credential.user!.uid).get();
-          if (!userDoc.exists) {
-            throw Exception('User profile not found');
-          }
-          
-          final userData = userDoc.data() as Map<String, dynamic>;
-          if (userData['isParent'] != true) {
-            throw Exception('This account is not registered as a parent');
-          }
-          
-          if (mounted) {
-            // Initialize data for state providers
-            final choreState = Provider.of<ChoreState>(context, listen: false);
-            choreState.setFamilyId(userData['familyId']);
-            await choreState.loadChores();
-            
-            final rewardState = Provider.of<RewardState>(context, listen: false);
-            rewardState.setFamilyId(userData['familyId']);
-            await rewardState.loadRewards();
-            
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const ParentDashboard()),
-            );
-          }
+          await _handleParentLogin();
         }
       }
     } catch (e) {
@@ -531,6 +607,74 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
   }
 
+  /// Handles parent registration
+  Future<void> _handleParentRegistration() async {
+    // Register new parent
+    final credential = await _authService.registerWithEmailAndPassword(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
+    
+    // Create a new family
+    final familyRef = await _firestoreService.createFamily(
+      credential.user!.uid,
+      'Family ${_nameController.text}',
+    );
+    
+    // Create user profile
+    await _firestoreService.createParentProfile(
+      credential.user!.uid,
+      _nameController.text,
+      _emailController.text,
+      familyId: familyRef.id,
+    );
+    
+    if (mounted) {
+      await _initializeStateAndNavigateToParentDashboard(familyRef.id);
+    }
+  }
+
+  /// Handles parent login
+  Future<void> _handleParentLogin() async {
+    // Login existing parent
+    final credential = await _authService.signInWithEmailAndPassword(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
+    
+    // Get user data
+    final userDoc = await _firestoreService.users.doc(credential.user!.uid).get();
+    if (!userDoc.exists) {
+      throw Exception('User profile not found');
+    }
+    
+    final userData = userDoc.data() as Map<String, dynamic>;
+    if (userData['isParent'] != true) {
+      throw Exception('This account is not registered as a parent');
+    }
+    
+    if (mounted) {
+      await _initializeStateAndNavigateToParentDashboard(userData['familyId']);
+    }
+  }
+
+  /// Initializes state providers and navigates to parent dashboard
+  Future<void> _initializeStateAndNavigateToParentDashboard(String familyId) async {
+    // Initialize data for state providers
+    final choreState = Provider.of<ChoreState>(context, listen: false);
+    choreState.setFamilyId(familyId);
+    await choreState.loadChores();
+    
+    final rewardState = Provider.of<RewardState>(context, listen: false);
+    rewardState.setFamilyId(familyId);
+    await rewardState.loadRewards();
+    
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const ParentDashboard()),
+    );
+  }
+
+  /// Handles child login
   Future<void> _handleChildLogin() async {
     try {
       if (_childFormKey.currentState!.validate()) {
@@ -544,35 +688,34 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         
         // Use the UserState provider to find or create the child
         final userState = Provider.of<UserState>(context, listen: false);
-        final child = await userState.findOrCreateChild(childName, familyCode);
         
-        if (child == null) {
-          throw Exception('Failed to find or create child profile');
-        }
-        
-        // Set family ID for the state providers
-        final familyId = child.familyId;
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Welcome, ${child.name}! You have ${child.points} points.')),
-          );
+        try {
+          final child = await userState.findOrCreateChild(childName, familyCode);
           
-          // Initialize data for state providers
-          final choreState = Provider.of<ChoreState>(context, listen: false);
-          choreState.setFamilyId(familyId);
-          await choreState.loadChores();
+          if (child == null) {
+            throw Exception('Failed to join family. Please try again');
+          }
           
-          final rewardState = Provider.of<RewardState>(context, listen: false);
-          rewardState.setFamilyId(familyId);
-          await rewardState.loadRewards();
+          // Set family ID for the state providers
+          final familyId = child.familyId;
           
-          // Navigate to child dashboard
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => ChildDashboard(childId: child.id),
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Welcome, ${child.name}! You have ${child.points} points.'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            
+            await _initializeStateAndNavigateToChildDashboard(familyId, child.id);
+          }
+        } catch (e) {
+          // Handle specific errors for family code and display appropriate messages
+          String errorMessage = e.toString().replaceAll('Exception: ', '');
+          setState(() {
+            _errorMessage = errorMessage;
+            _isLoading = false;
+          });
         }
       }
     } catch (e) {
@@ -581,10 +724,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           _errorMessage = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
           _isLoading = false;
         });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login error: ${e.toString()}')),
-        );
       }
     } finally {
       if (mounted && _isLoading) {
@@ -593,5 +732,24 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         });
       }
     }
+  }
+
+  /// Initializes state providers and navigates to child dashboard
+  Future<void> _initializeStateAndNavigateToChildDashboard(String familyId, String childId) async {
+    // Initialize data for state providers
+    final choreState = Provider.of<ChoreState>(context, listen: false);
+    choreState.setFamilyId(familyId);
+    await choreState.loadChores();
+    
+    final rewardState = Provider.of<RewardState>(context, listen: false);
+    rewardState.setFamilyId(familyId);
+    await rewardState.loadRewards();
+    
+    // Navigate to child dashboard
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => ChildDashboard(childId: childId),
+      ),
+    );
   }
 }

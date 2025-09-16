@@ -28,7 +28,7 @@ class MilestoneManager {
     const Milestone(
       pointThreshold: 50,
       title: "Task Starter",
-      description: "Congratulations! You've earned your first 50 points!",
+      description: "Congratulations! You've earned your first milestone!",
       icon: Icons.star,
       color: Colors.blue,
     ),

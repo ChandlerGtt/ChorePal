@@ -1,6 +1,5 @@
 // lib/models/reward_state.dart
 import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
 import 'reward.dart';
 import 'user.dart';

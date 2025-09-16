@@ -1,4 +1,7 @@
 // lib/models/chore.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+/// Model representing a chore in the application.
 class Chore {
   final String id;
   final String title;
@@ -12,28 +15,29 @@ class Chore {
   final String? completedBy; // Child ID who completed the chore
   final DateTime? completedAt; // When the chore was completed
 
+  /// Creates a new [Chore] instance.
   Chore({
     required this.id,
     required this.title,
-    required this.description,
+    this.description = '',
     required this.deadline,
     this.isCompleted = false,
     this.isPendingApproval = false,
-    required this.pointValue,
+    this.pointValue = 0,
     this.priority = 'medium',
     this.assignedTo = const [],
     this.completedBy,
     this.completedAt,
   });
 
-  // Create a Chore from Firestore data
+  /// Creates a [Chore] from Firestore data.
   factory Chore.fromFirestore(String id, Map<String, dynamic> data) {
     return Chore(
       id: id,
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       deadline: data['deadline'] != null 
-          ? (data['deadline']).toDate()
+          ? (data['deadline'] as Timestamp).toDate()
           : DateTime.now().add(const Duration(days: 1)),
       isCompleted: data['isCompleted'] ?? false,
       isPendingApproval: data['isPendingApproval'] ?? false,
@@ -44,12 +48,12 @@ class Chore {
       assignedTo: List<String>.from(data['assignedTo'] ?? []),
       completedBy: data['completedBy'],
       completedAt: data['completedAt'] != null 
-          ? (data['completedAt']).toDate()
+          ? (data['completedAt'] as Timestamp).toDate()
           : null,
     );
   }
 
-  // Convert to a map for Firestore
+  /// Converts this [Chore] to a map for Firestore.
   Map<String, dynamic> toFirestore() {
     return {
       'title': title,
@@ -65,7 +69,7 @@ class Chore {
     };
   }
 
-  // Create a copy with updated fields
+  /// Creates a copy of this [Chore] with updated fields.
   Chore copyWith({
     String? id,
     String? title,
