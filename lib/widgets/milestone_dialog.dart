@@ -65,7 +65,7 @@ class _MilestoneCelebrationDialogState extends State<MilestoneCelebrationDialog>
             emissionFrequency: 0.05,
             numberOfParticles: 20,
             gravity: 0.2,
-            colors: [
+            colors: const [
               Colors.red,
               Colors.blue,
               Colors.green,
