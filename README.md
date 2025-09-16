@@ -178,7 +178,3 @@ Contributions to ChorePal are welcome! Please follow these steps:
 3. Commit your changes
 4. Push to your branch
 5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
