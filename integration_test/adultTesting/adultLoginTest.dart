@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:chore_pal/main.dart' as app;
-import 'moduleTesting/login.dart';
+import '../moduleTesting/adultModules/adultLogin.dart';
 
 /*
 
