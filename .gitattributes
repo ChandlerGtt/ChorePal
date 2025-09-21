@@ -1,5 +1,5 @@
 # Normalize text; enforce LF for source files
-* text=auto
+* text=auto eol=lf
 
 *.dart  text eol=lf
 *.yaml  text eol=lf

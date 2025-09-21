@@ -4,12 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
+/* unused
 import 'screens/child/enhanced_child_dashboard.dart';
 import 'screens/parent/enhanced_parent_dashboard.dart';
+*/
 import 'models/chore_state.dart';
 import 'models/reward_state.dart';
 import 'models/user_state.dart';
-
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
@@ -93,11 +94,11 @@ class ChoreApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFF4CAF50);
-    final primaryColorDark = const Color(0xFF388E3C);
-    final secondaryColor = const Color(0xFF2196F3);
-    final backgroundColor = const Color(0xFFF5F5F5);
-    final textColor = const Color(0xFF333333);
+    const primaryColor =  Color(0xFF4CAF50);
+    //const primaryColorDark = const Color(0xFF388E3C);
+    const secondaryColor =  Color(0xFF2196F3);
+    const backgroundColor =  Color(0xFFF5F5F5);
+    const textColor =  Color(0xFF333333);
     
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -113,16 +114,16 @@ class ChoreApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: backgroundColor,
         // App bar theme
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           elevation: 4,
-          titleTextStyle: const TextStyle(
+          titleTextStyle:  TextStyle(
             color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
-          iconTheme: const IconThemeData(color: Colors.white),
+          iconTheme:  IconThemeData(color: Colors.white),
         ),
         // Tab bar theme - keep it simple and focused on preventing overlay
         tabBarTheme: const TabBarThemeData(
