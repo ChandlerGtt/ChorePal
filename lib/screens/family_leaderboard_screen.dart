@@ -5,6 +5,7 @@ import 'package:confetti/confetti.dart';
 import '../models/leaderboard.dart';
 import '../models/user_state.dart';
 import '../models/chore_state.dart';
+//unused
 import '../models/user.dart';
 
 class FamilyLeaderboardScreen extends StatefulWidget {
