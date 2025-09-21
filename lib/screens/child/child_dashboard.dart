@@ -55,7 +55,7 @@ class _ChildDashboardState extends State<ChildDashboard> with SingleTickerProvid
         _checkMilestones();
       }
     } catch (e) {
-      print('Error loading points: $e');
+       print('Error loading points: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;

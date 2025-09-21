@@ -1,9 +1,12 @@
 // lib/models/chore_state.dart
 import 'package:flutter/foundation.dart';
+/* unused
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'user.dart';
+*/
 import '../services/firestore_service.dart';
 import 'chore.dart';
-import 'user.dart';
+
 
 /// Manages the state of chores in the application.
 class ChoreState extends ChangeNotifier {
