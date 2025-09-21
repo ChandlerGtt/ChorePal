@@ -125,7 +125,7 @@ class ChoreApp extends StatelessWidget {
           iconTheme: const IconThemeData(color: Colors.white),
         ),
         // Tab bar theme - keep it simple and focused on preventing overlay
-        tabBarTheme: const TabBarTheme(
+        tabBarTheme: const TabBarThemeData(
           labelColor: Colors.white,
           unselectedLabelColor: Color(0xDDFFFFFF), 
           indicatorColor: Colors.white,
