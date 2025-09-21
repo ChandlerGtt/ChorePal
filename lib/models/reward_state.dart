@@ -1,5 +1,6 @@
 // lib/models/reward_state.dart
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
 import 'reward.dart';
 import 'user.dart';
@@ -10,10 +11,12 @@ class RewardState extends ChangeNotifier {
   Map<String, List<Reward>> _rewardsByTier = {};
   String? _familyId;
   bool _isLoading = false;
+  String? _errorMessage;
 
   List<Reward> get rewards => _rewards;
   Map<String, List<Reward>> get rewardsByTier => _rewardsByTier;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
   
   void setFamilyId(String familyId) {
     _familyId = familyId;
@@ -23,6 +26,7 @@ class RewardState extends ChangeNotifier {
     if (_familyId == null) return;
     
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     
     try {
@@ -47,6 +51,7 @@ class RewardState extends ChangeNotifier {
         rewards.sort((a, b) => a.pointsRequired.compareTo(b.pointsRequired));
       });
     } catch (e) {
+      _errorMessage = 'Failed to load rewards. Please check your connection.';
       print('Error loading rewards: $e');
     } finally {
       _isLoading = false;

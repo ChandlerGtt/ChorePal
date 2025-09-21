@@ -6,8 +6,8 @@ import '../services/firestore_service.dart';
 import '../models/chore_state.dart';
 import '../models/reward_state.dart';
 import '../models/user_state.dart';
-import 'parent/parent_dashboard.dart';
-import 'child/child_dashboard.dart';
+import 'parent/enhanced_parent_dashboard.dart';
+import 'child/enhanced_child_dashboard.dart';
 
 /// Login screen for the ChorePal app.
 class LoginScreen extends StatefulWidget {
@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           'Helping families manage chores together',
           style: TextStyle(
             fontSize: 16,
-            color: _textColor.withOpacity(0.7),
+            color: _textColor.withValues(alpha: 0.7),
           ),
         ),
         const SizedBox(height: 30),
@@ -132,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 5,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -669,8 +669,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     rewardState.setFamilyId(familyId);
     await rewardState.loadRewards();
     
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const ParentDashboard()),
+      MaterialPageRoute(builder: (context) => const EnhancedParentDashboard()),
     );
   }
 
@@ -746,9 +747,10 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     await rewardState.loadRewards();
     
     // Navigate to child dashboard
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => ChildDashboard(childId: childId),
+        builder: (context) => EnhancedChildDashboard(childId: childId),
       ),
     );
   }

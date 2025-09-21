@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/reward.dart';
 import '../models/reward_state.dart';
 import '../models/user_state.dart';
+import '../models/user.dart';
 import 'package:intl/intl.dart';
 
 class RewardHistoryScreen extends StatelessWidget {

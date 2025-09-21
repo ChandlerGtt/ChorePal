@@ -12,23 +12,33 @@ class UserState extends ChangeNotifier {
   bool _isLoading = false;
   String? _familyId;
   String? _familyCode;
+  String? _errorMessage;
   
   User? get currentUser => _currentUser;
   List<Child> get childrenInFamily => _childrenInFamily;
   bool get isLoading => _isLoading;
   String? get familyId => _familyId;
   String? get familyCode => _familyCode;
+  String? get errorMessage => _errorMessage;
   bool get isParent => _currentUser != null && _currentUser!.isParent;
+
+  /// Clears any error messages
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
 
   // Load the current user from Firebase Auth
   Future<void> loadCurrentUser() async {
     if (_authService.currentUser == null) {
       _currentUser = null;
+      _errorMessage = null;
       notifyListeners();
       return;
     }
     
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     
     try {
@@ -47,6 +57,7 @@ class UserState extends ChangeNotifier {
         await loadFamilyData();
       }
     } catch (e) {
+      _errorMessage = 'Failed to load your profile. Please try again.';
       print('Error loading current user: $e');
     } finally {
       _isLoading = false;

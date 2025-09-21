@@ -82,7 +82,7 @@ class _AddRewardScreenState extends State<AddRewardScreen> {
                   labelText: 'Reward Tier',
                   border: OutlineInputBorder(),
                 ),
-                initialValue: _selectedTier,
+                value: _selectedTier,
                 items: const [
                   DropdownMenuItem(value: 'bronze', child: Text('Bronze Tier')),
                   DropdownMenuItem(value: 'silver', child: Text('Silver Tier')),

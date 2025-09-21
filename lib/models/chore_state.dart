@@ -1,7 +1,9 @@
 // lib/models/chore_state.dart
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/firestore_service.dart';
 import 'chore.dart';
+import 'user.dart';
 
 /// Manages the state of chores in the application.
 class ChoreState extends ChangeNotifier {
@@ -15,6 +17,7 @@ class ChoreState extends ChangeNotifier {
   
   String? _familyId;
   bool _isLoading = false;
+  String? _errorMessage;
 
   // Getters
   List<Chore> get chores => _chores;
@@ -22,6 +25,7 @@ class ChoreState extends ChangeNotifier {
   List<Chore> get pendingApprovalChores => _pendingApprovalChores;
   List<Chore> get completedChores => _completedChores;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
   
   /// Sets the family ID for this chore state.
   void setFamilyId(String familyId) {
@@ -33,6 +37,7 @@ class ChoreState extends ChangeNotifier {
     if (_familyId == null) return;
     
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     
     try {
@@ -49,6 +54,7 @@ class ChoreState extends ChangeNotifier {
       // Sort chores
       _sortChores();
     } catch (e) {
+      _errorMessage = 'Failed to load chores. Please check your connection.';
       print('Error loading chores: $e');
     } finally {
       _isLoading = false;

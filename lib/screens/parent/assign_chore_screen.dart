@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/chore.dart';
 import '../../models/chore_state.dart';
 import '../../models/user_state.dart';
+import '../../models/user.dart';
 
 class AssignChoreScreen extends StatefulWidget {
   final Chore chore;

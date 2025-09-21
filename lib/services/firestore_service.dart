@@ -20,15 +20,19 @@ class FirestoreService {
   // ----------------------
 
   /// Creates a new parent user profile.
-  Future<void> createParentProfile(String uid, String name, String email, {String? familyId}) {
-    return users.doc(uid).set({
-      'name': name,
-      'email': email,
-      'isParent': true,
-      'familyId': familyId ?? '',
-      'points': 0,
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+  Future<void> createParentProfile(String uid, String name, String email, {String? familyId}) async {
+    try {
+      await users.doc(uid).set({
+        'name': name,
+        'email': email,
+        'isParent': true,
+        'familyId': familyId ?? '',
+        'points': 0,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to create your profile. Please try again.');
+    }
   }
 
   /// Creates a new child user profile.
@@ -46,24 +50,35 @@ class FirestoreService {
 
   /// Gets a user by ID.
   Future<User> getUserById(String userId) async {
-    DocumentSnapshot doc = await users.doc(userId).get();
-    if (!doc.exists) {
-      throw Exception('User not found');
+    try {
+      DocumentSnapshot doc = await users.doc(userId).get();
+      if (!doc.exists) {
+        throw Exception('User profile not found. Please try logging in again.');
+      }
+      
+      return User.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
+    } catch (e) {
+      if (e.toString().contains('User profile not found')) {
+        rethrow;
+      }
+      throw Exception('Failed to load user profile. Please check your connection.');
     }
-    
-    return User.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
   }
 
   /// Gets all children in a family.
   Future<List<Child>> getChildrenInFamily(String familyId) async {
-    QuerySnapshot snapshot = await users
-        .where('familyId', isEqualTo: familyId)
-        .where('isParent', isEqualTo: false)
-        .get();
-    
-    return snapshot.docs.map((doc) {
-      return Child.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
-    }).toList();
+    try {
+      QuerySnapshot snapshot = await users
+          .where('familyId', isEqualTo: familyId)
+          .where('isParent', isEqualTo: false)
+          .get();
+      
+      return snapshot.docs.map((doc) {
+        return Child.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to load children. Please check your connection.');
+    }
   }
 
   /// Awards points to a child.
@@ -117,7 +132,7 @@ class FirestoreService {
     
     // Ensure the code doesn't start with 0
     if (code.startsWith('0')) {
-      code = '1${code.substring(1)}';
+      code = '1' + code.substring(1);
     }
     
     return code;
