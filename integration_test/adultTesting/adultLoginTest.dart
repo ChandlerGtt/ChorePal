@@ -1,6 +1,6 @@
-/*
+
 import 'package:flutter_test/flutter_test.dart';
-//import 'package:integration_test/integration_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:chore_pal/main.dart' as app;
 import '../moduleTesting/adultModules/adultLogin.dart';
 
@@ -15,7 +15,7 @@ password: password!1234
 
 and just land on the interface
 
- */
+*/
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -35,4 +35,3 @@ void main() {
 
   });
 }
-*/
