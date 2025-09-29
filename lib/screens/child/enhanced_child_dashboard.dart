@@ -7,7 +7,7 @@ import '../../models/milestone.dart';
 import '../../widgets/enhanced_chore_card.dart';
 import '../../widgets/reward_card.dart';
 import '../../widgets/enhanced_milestone_dialog.dart';
-import '../../services/auth_service.dart';
+import '../../widgets/notification_helper.dart';
 import '../../services/firestore_service.dart';
 import '../login_screen.dart';
 import '../reward_history_screen.dart';
@@ -16,9 +16,9 @@ import '../family_leaderboard_screen.dart';
 
 class EnhancedChildDashboard extends StatefulWidget {
   final String childId;
-  
+
   const EnhancedChildDashboard({
-    Key? key, 
+    Key? key,
     required this.childId,
   }) : super(key: key);
 
@@ -26,7 +26,7 @@ class EnhancedChildDashboard extends StatefulWidget {
   State<EnhancedChildDashboard> createState() => _EnhancedChildDashboardState();
 }
 
-class _EnhancedChildDashboardState extends State<EnhancedChildDashboard> 
+class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final FirestoreService _firestoreService = FirestoreService();
@@ -38,7 +38,8 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this); // Added leaderboard tab
+    _tabController =
+        TabController(length: 3, vsync: this); // Added leaderboard tab
     // Schedule loading data after the current frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadPoints();
@@ -48,14 +49,14 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
   Future<void> _loadPoints() async {
     try {
       _lastPoints = _points;
-      
+
       final points = await _firestoreService.getChildPoints(widget.childId);
       if (mounted) {
         setState(() {
           _points = points;
           _isLoading = false;
         });
-        
+
         _checkMilestones();
       }
     } catch (e) {
@@ -67,10 +68,11 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
       }
     }
   }
-  
+
   void _checkMilestones() {
     if (_lastPoints != _points) {
-      final milestone = _milestoneManager.checkNewMilestone(_lastPoints, _points);
+      final milestone =
+          _milestoneManager.checkNewMilestone(_lastPoints, _points);
       if (milestone != null && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           EnhancedMilestoneCelebrationDialog.show(context, milestone, _points);
@@ -91,6 +93,40 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
       appBar: AppBar(
         title: const Text('My ChorePal'),
         actions: [
+          // Notification test button
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            tooltip: 'Test Notification',
+            onPressed: () async {
+              await NotificationHelper.requestPermissionsAndTest();
+            },
+          ),
+          // Test completion notification button
+          IconButton(
+            icon: const Icon(Icons.check_circle),
+            tooltip: 'Test Completion Notification',
+            onPressed: () async {
+              await NotificationHelper.showChoreCompletedByChildNotification(
+                  "Test Child", "Test Chore");
+            },
+          ),
+          // Test daily reminder button
+          IconButton(
+            icon: const Icon(Icons.schedule),
+            tooltip: 'Test Daily Reminder',
+            onPressed: () async {
+              await NotificationHelper.showDailyReminder("Test Child", 3);
+            },
+          ),
+          // Test overdue alert button
+          IconButton(
+            icon: const Icon(Icons.warning),
+            tooltip: 'Test Overdue Alert',
+            onPressed: () async {
+              await NotificationHelper.showOverdueChoreAlert(
+                  "Test Child", ["Take out trash", "Clean room", "Do dishes"]);
+            },
+          ),
           PopupMenuButton<String>(
             tooltip: 'History',
             icon: const Icon(Icons.history),
@@ -98,13 +134,15 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
               if (value == 'chores') {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => ChoreHistoryScreen(childId: widget.childId),
+                    builder: (context) =>
+                        ChoreHistoryScreen(childId: widget.childId),
                   ),
                 );
               } else if (value == 'rewards') {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => RewardHistoryScreen(childId: widget.childId),
+                    builder: (context) =>
+                        RewardHistoryScreen(childId: widget.childId),
                   ),
                 );
               }
@@ -231,12 +269,14 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
         if (choreState.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        
-        final myChores = choreState.chores.where((chore) => 
-          !chore.isCompleted && 
-          (chore.assignedTo.isEmpty || chore.assignedTo.contains(widget.childId))
-        ).toList();
-        
+
+        final myChores = choreState.chores
+            .where((chore) =>
+                !chore.isCompleted &&
+                (chore.assignedTo.isEmpty ||
+                    chore.assignedTo.contains(widget.childId)))
+            .toList();
+
         if (myChores.isEmpty) {
           return Center(
             child: Column(
@@ -275,7 +315,7 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
             ),
           );
         }
-        
+
         return RefreshIndicator(
           onRefresh: () async {
             await Provider.of<ChoreState>(context, listen: false).loadChores();
@@ -293,7 +333,7 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
                   try {
                     await Provider.of<ChoreState>(context, listen: false)
                         .markChoreAsPendingApproval(id, widget.childId);
-                    
+
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -301,7 +341,8 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
                             children: [
                               Icon(Icons.check_circle, color: Colors.white),
                               SizedBox(width: 8),
-                              Text('Chore completed! Waiting for parent approval.'),
+                              Text(
+                                  'Chore completed! Waiting for parent approval.'),
                             ],
                           ),
                           backgroundColor: Colors.green,
@@ -337,7 +378,7 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
         if (rewardState.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         if (rewardState.rewards.isEmpty) {
           return Center(
             child: Column(
@@ -367,30 +408,30 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
             ),
           );
         }
-        
+
         final rewardsByTier = rewardState.rewardsByTier;
         final children = <Widget>[];
-        
+
         // Build tier sections
         for (final tier in ['gold', 'silver', 'bronze']) {
           if (rewardsByTier.containsKey(tier)) {
             children.add(_buildTierHeader(tier));
-            children.addAll(
-              rewardsByTier[tier]!.map((reward) => 
-                RewardCard(
-                  reward: reward,
-                  onRedeem: _points >= reward.pointsRequired && !reward.isRedeemed
-                    ? (id, points) => _handleRedeemReward(id, points)
-                    : null,
-                )
-              ).toList()
-            );
+            children.addAll(rewardsByTier[tier]!
+                .map((reward) => RewardCard(
+                      reward: reward,
+                      onRedeem:
+                          _points >= reward.pointsRequired && !reward.isRedeemed
+                              ? (id, points) => _handleRedeemReward(id, points)
+                              : null,
+                    ))
+                .toList());
           }
         }
-        
+
         return RefreshIndicator(
           onRefresh: () async {
-            await Provider.of<RewardState>(context, listen: false).loadRewards();
+            await Provider.of<RewardState>(context, listen: false)
+                .loadRewards();
             await _loadPoints();
           },
           child: ListView(
@@ -405,7 +446,7 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
   Widget _buildTierHeader(String tier) {
     Color color;
     IconData icon;
-    
+
     switch (tier) {
       case 'gold':
         color = Colors.amber;
@@ -423,7 +464,7 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
         color = Colors.blue;
         icon = Icons.card_giftcard;
     }
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       padding: const EdgeInsets.all(16),
@@ -458,12 +499,12 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
   Future<void> _handleRedeemReward(String rewardId, int pointsRequired) async {
     try {
       _lastPoints = _points;
-      
+
       await Provider.of<RewardState>(context, listen: false)
-        .redeemReward(rewardId, widget.childId);
-      
+          .redeemReward(rewardId, widget.childId);
+
       await _loadPoints();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -486,7 +527,8 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
+            content:
+                Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
             backgroundColor: Colors.red,
           ),
         );

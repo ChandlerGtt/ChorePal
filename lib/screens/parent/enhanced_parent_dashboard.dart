@@ -9,10 +9,10 @@ import '../../models/user_state.dart';
 import '../../models/user.dart';
 import '../../widgets/enhanced_chore_card.dart';
 import '../../widgets/reward_card.dart';
+import '../../widgets/notification_helper.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../login_screen.dart';
-import '../../models/reward.dart';
 import 'add_reward_screen.dart';
 import 'assign_chore_screen.dart';
 import '../reward_history_screen.dart';
@@ -25,7 +25,8 @@ class EnhancedParentDashboard extends StatefulWidget {
   const EnhancedParentDashboard({super.key});
 
   @override
-  State<EnhancedParentDashboard> createState() => _EnhancedParentDashboardState();
+  State<EnhancedParentDashboard> createState() =>
+      _EnhancedParentDashboardState();
 }
 
 class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
@@ -60,11 +61,12 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
       final userState = Provider.of<UserState>(context, listen: false);
       await userState.loadCurrentUser();
       await userState.loadFamilyData();
-           } catch (e) {
-         if (mounted) {
-           AppSnackBar.showError(context, 'Failed to load family data. Please try again.');
-         }
-       }
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.showError(
+            context, 'Failed to load family data. Please try again.');
+      }
+    }
   }
 
   Future<void> _loadFamilyCode() async {
@@ -79,7 +81,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
         final familyId = userData['familyId'];
 
         if (familyId != null) {
-          final familyDoc = await _firestoreService.families.doc(familyId).get();
+          final familyDoc =
+              await _firestoreService.families.doc(familyId).get();
           if (!mounted) return;
 
           final familyData = familyDoc.data() as Map<String, dynamic>;
@@ -144,6 +147,32 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     return AppBar(
       title: const Text('Parent Dashboard'),
       actions: [
+        // Notification test button
+        IconButton(
+          icon: const Icon(Icons.notifications),
+          tooltip: 'Test Approval Notification',
+          onPressed: () async {
+            await NotificationHelper.showChoreApprovedNotification(
+                "Test Chore", 10);
+          },
+        ),
+        // Test weekly summary button
+        IconButton(
+          icon: const Icon(Icons.analytics),
+          tooltip: 'Test Weekly Summary',
+          onPressed: () async {
+            await NotificationHelper.showWeeklySummary("Test Child", 8, 10, 45);
+          },
+        ),
+        // Test reward available button
+        IconButton(
+          icon: const Icon(Icons.card_giftcard),
+          tooltip: 'Test Reward Available',
+          onPressed: () async {
+            await NotificationHelper.showRewardAvailable(
+                "Test Child", "Extra Screen Time", 50, 45);
+          },
+        ),
         PopupMenuButton<String>(
           tooltip: 'History',
           icon: const Icon(Icons.history),
@@ -254,7 +283,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     if (_tabController.index > 1) {
       return Container();
     }
-    
+
     return FloatingActionButton(
       onPressed: () {
         if (_tabController.index == 0) {
@@ -356,7 +385,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
               children: [
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
@@ -634,15 +664,19 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     return const FamilyLeaderboardScreen();
   }
 
-  Widget _buildChildCard(Child childUser, ChoreState choreState, RewardState rewardState) {
+  Widget _buildChildCard(
+      Child childUser, ChoreState choreState, RewardState rewardState) {
     final completedChoreCount = choreState.chores
-        .where((chore) => chore.isCompleted && chore.completedBy == childUser.id)
+        .where(
+            (chore) => chore.isCompleted && chore.completedBy == childUser.id)
         .length;
 
-    final redeemedRewardCount = rewardState.getChildRedeemedRewards(childUser.id).length;
+    final redeemedRewardCount =
+        rewardState.getChildRedeemedRewards(childUser.id).length;
 
     final milestoneManager = MilestoneManager();
-    final currentMilestone = milestoneManager.getCurrentMilestone(childUser.points);
+    final currentMilestone =
+        milestoneManager.getCurrentMilestone(childUser.points);
     final nextMilestone = milestoneManager.getNextMilestone(childUser.points);
 
     return Card(
@@ -699,7 +733,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(16),
@@ -730,7 +765,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
               ],
             ),
           ),
-          
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -748,20 +782,12 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                   Icons.card_giftcard,
                   Colors.amber,
                 ),
-
                 if (currentMilestone != null)
                   _buildMilestoneSectionImproved(
-                    'Current Milestone', 
-                    currentMilestone, 
-                    childUser.points
-                  ),
-
+                      'Current Milestone', currentMilestone, childUser.points),
                 if (nextMilestone != null)
                   _buildMilestoneSectionImproved(
-                    'Next Milestone', 
-                    nextMilestone, 
-                    childUser.points
-                  ),
+                      'Next Milestone', nextMilestone, childUser.points),
               ],
             ),
           ),
@@ -770,12 +796,14 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     );
   }
 
-  Widget _buildMilestoneSectionImproved(String label, Milestone milestone, int currentPoints) {
+  Widget _buildMilestoneSectionImproved(
+      String label, Milestone milestone, int currentPoints) {
     final bool isCurrentMilestone = label == 'Current Milestone';
-    final int pointsNeeded = isCurrentMilestone ? 0 : milestone.pointThreshold - currentPoints;
-    final double progress = isCurrentMilestone ? 1.0 : 
-      currentPoints / milestone.pointThreshold;
-    
+    final int pointsNeeded =
+        isCurrentMilestone ? 0 : milestone.pointThreshold - currentPoints;
+    final double progress =
+        isCurrentMilestone ? 1.0 : currentPoints / milestone.pointThreshold;
+
     return Container(
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(12),
@@ -835,13 +863,15 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       value: progress,
                       minHeight: 8,
                       backgroundColor: Colors.grey.shade200,
-                      valueColor: AlwaysStoppedAnimation<Color>(milestone.color),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(milestone.color),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: milestone.color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -863,7 +893,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     );
   }
 
-  Widget _buildChildStatRow(String label, String value, IconData icon, Color color) {
+  Widget _buildChildStatRow(
+      String label, String value, IconData icon, Color color) {
     return Row(
       children: [
         Container(
@@ -914,12 +945,16 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     );
   }
 
-  Widget _buildStatisticsContent(ChoreState choreState, RewardState rewardState) {
+  Widget _buildStatisticsContent(
+      ChoreState choreState, RewardState rewardState) {
     final totalChores = choreState.chores.length;
-    final completedChores = choreState.chores.where((c) => c.isCompleted).length;
-    final pendingChores = choreState.chores.where((c) => c.isPendingApproval).length;
+    final completedChores =
+        choreState.chores.where((c) => c.isCompleted).length;
+    final pendingChores =
+        choreState.chores.where((c) => c.isPendingApproval).length;
     final totalRewards = rewardState.rewards.length;
-    final redeemedRewards = rewardState.rewards.where((r) => r.isRedeemed).length;
+    final redeemedRewards =
+        rewardState.rewards.where((r) => r.isRedeemed).length;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -934,7 +969,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
             ),
           ),
           const SizedBox(height: 16),
-          
           Card(
             elevation: 4,
             shape: RoundedRectangleBorder(
@@ -945,16 +979,20 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildStatRow('Total Chores Created', '$totalChores', Icons.assignment),
-                  _buildStatRow('Completed Chores', '$completedChores', Icons.check_circle),
-                  _buildStatRow('Pending Approval', '$pendingChores', Icons.hourglass_top),
-                  _buildStatRow('Total Rewards', '$totalRewards', Icons.card_giftcard),
-                  _buildStatRow('Redeemed Rewards', '$redeemedRewards', Icons.redeem),
+                  _buildStatRow(
+                      'Total Chores Created', '$totalChores', Icons.assignment),
+                  _buildStatRow('Completed Chores', '$completedChores',
+                      Icons.check_circle),
+                  _buildStatRow('Pending Approval', '$pendingChores',
+                      Icons.hourglass_top),
+                  _buildStatRow(
+                      'Total Rewards', '$totalRewards', Icons.card_giftcard),
+                  _buildStatRow(
+                      'Redeemed Rewards', '$redeemedRewards', Icons.redeem),
                 ],
               ),
             ),
           ),
-          
           const SizedBox(height: 24),
           const Text(
             'Children Progress',
@@ -964,14 +1002,14 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
             ),
           ),
           const SizedBox(height: 16),
-
           _buildChildrenProgressSection(choreState, rewardState),
         ],
       ),
     );
   }
 
-  Widget _buildChildrenProgressSection(ChoreState choreState, RewardState rewardState) {
+  Widget _buildChildrenProgressSection(
+      ChoreState choreState, RewardState rewardState) {
     return Consumer<UserState>(
       builder: (context, userState, _) {
         if (userState.childrenInFamily.isEmpty) {
@@ -994,7 +1032,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
 
   Widget _buildStatRow(String label, String value, IconData icon) {
     final color = _getStatColor(icon);
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -1035,7 +1073,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
       ),
     );
   }
-  
+
   Color _getStatColor(IconData icon) {
     if (icon == Icons.check_circle) {
       return Colors.green;
@@ -1049,7 +1087,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     return Colors.blue;
   }
 
-  Future<void> _handleApproveChore(String choreId, String childId, int points) async {
+  Future<void> _handleApproveChore(
+      String choreId, String childId, int points) async {
     try {
       await Provider.of<ChoreState>(context, listen: false)
           .approveChore(choreId, childId);
@@ -1084,7 +1123,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
     final rewardController = TextEditingController();
-    
+
     bool includeReward = false;
     String selectedPriority = 'medium';
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
@@ -1117,7 +1156,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                             color: Colors.green.shade100,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.add_task, color: Colors.green.shade700),
+                          child: Icon(Icons.add_task,
+                              color: Colors.green.shade700),
                         ),
                         const SizedBox(width: 12),
                         const Expanded(
@@ -1139,7 +1179,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                     ),
                     const Divider(),
                     const SizedBox(height: 16),
-                    
                     TextField(
                       controller: titleController,
                       decoration: InputDecoration(
@@ -1165,7 +1204,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       textCapitalization: TextCapitalization.sentences,
                     ),
                     const SizedBox(height: 16),
-                    
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -1174,7 +1212,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       ),
                       child: SwitchListTile(
                         title: const Text('Include Reward Points'),
-                        subtitle: const Text('Motivate with points for completion'),
+                        subtitle:
+                            const Text('Motivate with points for completion'),
                         dense: true,
                         value: includeReward,
                         activeColor: Colors.green,
@@ -1189,7 +1228,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         },
                       ),
                     ),
-                    
                     if (includeReward) ...[
                       const SizedBox(height: 16),
                       TextField(
@@ -1205,7 +1243,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         keyboardType: TextInputType.number,
                       ),
                     ],
-                    
                     const SizedBox(height: 16),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -1217,7 +1254,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         title: Row(
                           children: [
                             Icon(
-                              Icons.priority_high, 
+                              Icons.priority_high,
                               color: Colors.red,
                               size: 18,
                             ),
@@ -1225,7 +1262,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                             const Text('High Priority'),
                           ],
                         ),
-                        subtitle: const Text('This chore will be highlighted for children'),
+                        subtitle: const Text(
+                            'This chore will be highlighted for children'),
                         dense: true,
                         value: selectedPriority == 'high',
                         activeColor: Colors.red,
@@ -1237,7 +1275,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         },
                       ),
                     ),
-                    
                     const SizedBox(height: 16),
                     Text(
                       'Deadline:',
@@ -1248,16 +1285,16 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       ),
                     ),
                     const SizedBox(height: 8),
-                    
                     InkWell(
                       onTap: () async {
                         final DateTime? pickedDate = await showDatePicker(
                           context: context,
                           initialDate: selectedDate,
                           firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 365)),
                         );
-                        
+
                         if (pickedDate != null) {
                           setDialogState(() {
                             selectedDate = pickedDate;
@@ -1303,9 +1340,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         ),
                       ),
                     ),
-                    
                     const SizedBox(height: 12),
-                    
                     InkWell(
                       onTap: () async {
                         final TimeOfDay? pickedTime = await showTimePicker(
@@ -1320,7 +1355,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                             );
                           },
                         );
-                        
+
                         if (pickedTime != null) {
                           setDialogState(() {
                             selectedTime = pickedTime;
@@ -1366,7 +1401,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         ),
                       ),
                     ),
-                    
                     const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -1388,7 +1422,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                           ),
                           onPressed: () {
                             if (titleController.text.isNotEmpty) {
-                              Provider.of<ChoreState>(context, listen: false).addChore(
+                              Provider.of<ChoreState>(context, listen: false)
+                                  .addChore(
                                 Chore(
                                   id: DateTime.now().toString(),
                                   title: titleController.text,
@@ -1400,7 +1435,10 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                                     selectedTime.hour,
                                     selectedTime.minute,
                                   ),
-                                  pointValue: includeReward ? (int.tryParse(rewardController.text) ?? 0) : 0,
+                                  pointValue: includeReward
+                                      ? (int.tryParse(rewardController.text) ??
+                                          0)
+                                      : 0,
                                   priority: selectedPriority,
                                 ),
                               );

@@ -4,22 +4,24 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
-import 'screens/child/enhanced_child_dashboard.dart';
-import 'screens/parent/enhanced_parent_dashboard.dart';
 import 'models/chore_state.dart';
 import 'models/reward_state.dart';
 import 'models/user_state.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     // Initialize Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    
+
+    // Initialize notification service
+    await NotificationService().initialize();
+
     runApp(
       MultiProvider(
         providers: [
@@ -98,7 +100,7 @@ class ChoreApp extends StatelessWidget {
     final secondaryColor = const Color(0xFF2196F3);
     final backgroundColor = const Color(0xFFF5F5F5);
     final textColor = const Color(0xFF333333);
-    
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ChorePal',
@@ -125,9 +127,9 @@ class ChoreApp extends StatelessWidget {
           iconTheme: const IconThemeData(color: Colors.white),
         ),
         // Tab bar theme - keep it simple and focused on preventing overlay
-        tabBarTheme: const TabBarTheme(
+        tabBarTheme: const TabBarThemeData(
           labelColor: Colors.white,
-          unselectedLabelColor: Color(0xDDFFFFFF), 
+          unselectedLabelColor: Color(0xDDFFFFFF),
           indicatorColor: Colors.white,
           indicatorSize: TabBarIndicatorSize.tab,
           labelPadding: EdgeInsets.symmetric(horizontal: 8),
@@ -177,7 +179,8 @@ class ChoreApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide(color: primaryColor, width: 2),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
       home: const LoginScreen(),

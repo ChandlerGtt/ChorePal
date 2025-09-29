@@ -16,6 +16,9 @@ dependencies:
   cloud_firestore: ^5.6.5
   intl: ^0.20.2
   confetti: ^0.8.0
+  flutter_local_notifications: ^17.2.3
+  permission_handler: ^11.3.1
+  timezone: ^0.9.4
 
 dev_dependencies:
   flutter_test:
