@@ -13,6 +13,7 @@ import '../login_screen.dart';
 import '../reward_history_screen.dart';
 import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
+import '../notification_debug_screen.dart';
 
 class EnhancedChildDashboard extends StatefulWidget {
   final String childId;
@@ -125,6 +126,18 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
             onPressed: () async {
               await NotificationHelper.showOverdueChoreAlert(
                   "Test Child", ["Take out trash", "Clean room", "Do dishes"]);
+            },
+          ),
+          // Debug button
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            tooltip: 'Notification Debug',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const NotificationDebugScreen(),
+                ),
+              );
             },
           ),
           PopupMenuButton<String>(
