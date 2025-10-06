@@ -9,7 +9,6 @@ import '../../models/user_state.dart';
 import '../../models/user.dart';
 import '../../widgets/enhanced_chore_card.dart';
 import '../../widgets/reward_card.dart';
-import '../../widgets/notification_helper.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../login_screen.dart';
@@ -147,32 +146,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     return AppBar(
       title: const Text('Parent Dashboard'),
       actions: [
-        // Notification test button
-        IconButton(
-          icon: const Icon(Icons.notifications),
-          tooltip: 'Test Approval Notification',
-          onPressed: () async {
-            await NotificationHelper.showChoreApprovedNotification(
-                "Test Chore", 10);
-          },
-        ),
-        // Test weekly summary button
-        IconButton(
-          icon: const Icon(Icons.analytics),
-          tooltip: 'Test Weekly Summary',
-          onPressed: () async {
-            await NotificationHelper.showWeeklySummary("Test Child", 8, 10, 45);
-          },
-        ),
-        // Test reward available button
-        IconButton(
-          icon: const Icon(Icons.card_giftcard),
-          tooltip: 'Test Reward Available',
-          onPressed: () async {
-            await NotificationHelper.showRewardAvailable(
-                "Test Child", "Extra Screen Time", 50, 45);
-          },
-        ),
         PopupMenuButton<String>(
           tooltip: 'History',
           icon: const Icon(Icons.history),

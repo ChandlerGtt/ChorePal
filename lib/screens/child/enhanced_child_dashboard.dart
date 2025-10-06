@@ -7,13 +7,11 @@ import '../../models/milestone.dart';
 import '../../widgets/enhanced_chore_card.dart';
 import '../../widgets/reward_card.dart';
 import '../../widgets/enhanced_milestone_dialog.dart';
-import '../../widgets/notification_helper.dart';
 import '../../services/firestore_service.dart';
 import '../login_screen.dart';
 import '../reward_history_screen.dart';
 import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
-import '../notification_debug_screen.dart';
 
 class EnhancedChildDashboard extends StatefulWidget {
   final String childId;
@@ -94,52 +92,6 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
       appBar: AppBar(
         title: const Text('My ChorePal'),
         actions: [
-          // Notification test button
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            tooltip: 'Test Notification',
-            onPressed: () async {
-              await NotificationHelper.requestPermissionsAndTest();
-            },
-          ),
-          // Test completion notification button
-          IconButton(
-            icon: const Icon(Icons.check_circle),
-            tooltip: 'Test Completion Notification',
-            onPressed: () async {
-              await NotificationHelper.showChoreCompletedByChildNotification(
-                  "Test Child", "Test Chore");
-            },
-          ),
-          // Test daily reminder button
-          IconButton(
-            icon: const Icon(Icons.schedule),
-            tooltip: 'Test Daily Reminder',
-            onPressed: () async {
-              await NotificationHelper.showDailyReminder("Test Child", 3);
-            },
-          ),
-          // Test overdue alert button
-          IconButton(
-            icon: const Icon(Icons.warning),
-            tooltip: 'Test Overdue Alert',
-            onPressed: () async {
-              await NotificationHelper.showOverdueChoreAlert(
-                  "Test Child", ["Take out trash", "Clean room", "Do dishes"]);
-            },
-          ),
-          // Debug button
-          IconButton(
-            icon: const Icon(Icons.bug_report),
-            tooltip: 'Notification Debug',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const NotificationDebugScreen(),
-                ),
-              );
-            },
-          ),
           PopupMenuButton<String>(
             tooltip: 'History',
             icon: const Icon(Icons.history),
