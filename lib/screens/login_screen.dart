@@ -1,6 +1,7 @@
 // lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/chore_state.dart';
@@ -17,28 +18,29 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   // Form keys
   final _parentFormKey = GlobalKey<FormState>();
   final _childFormKey = GlobalKey<FormState>();
-  
+
   // Tab controller
   late TabController _tabController;
-  
+
   // State variables
   bool _isLoading = false;
   String? _errorMessage;
   bool _isRegistering = false;
-  
+
   // Parent login fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
-  
+
   // Child login fields
   final _childNameController = TextEditingController();
   final _familyCodeController = TextEditingController();
-  
+
   // Services
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
@@ -194,13 +196,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  if (_isRegistering) 
-                    _buildNameField(),
+                  if (_isRegistering) _buildNameField(),
                   _buildEmailField(),
                   const SizedBox(height: 16),
                   _buildPasswordField(),
-                  if (_errorMessage != null)
-                    _buildErrorMessage(),
+                  if (_errorMessage != null) _buildErrorMessage(),
                   const SizedBox(height: 24),
                   _buildParentActionButton(),
                   const SizedBox(height: 16),
@@ -356,7 +356,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                   const SizedBox(width: 8),
                   Text(
                     _isRegistering ? 'Create Account' : 'Login',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -594,7 +595,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              'Error: ${e.toString().replaceAll('Exception: ', '')}';
           _isLoading = false;
         });
       }
@@ -614,13 +616,13 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
-    
+
     // Create a new family
     final familyRef = await _firestoreService.createFamily(
       credential.user!.uid,
       'Family ${_nameController.text}',
     );
-    
+
     // Create user profile
     await _firestoreService.createParentProfile(
       credential.user!.uid,
@@ -628,7 +630,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       _emailController.text,
       familyId: familyRef.id,
     );
-    
+
     if (mounted) {
       await _initializeStateAndNavigateToParentDashboard(familyRef.id);
     }
@@ -641,34 +643,36 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
-    
+
     // Get user data
-    final userDoc = await _firestoreService.users.doc(credential.user!.uid).get();
+    final userDoc =
+        await _firestoreService.users.doc(credential.user!.uid).get();
     if (!userDoc.exists) {
       throw Exception('User profile not found');
     }
-    
+
     final userData = userDoc.data() as Map<String, dynamic>;
     if (userData['isParent'] != true) {
       throw Exception('This account is not registered as a parent');
     }
-    
+
     if (mounted) {
       await _initializeStateAndNavigateToParentDashboard(userData['familyId']);
     }
   }
 
   /// Initializes state providers and navigates to parent dashboard
-  Future<void> _initializeStateAndNavigateToParentDashboard(String familyId) async {
+  Future<void> _initializeStateAndNavigateToParentDashboard(
+      String familyId) async {
     // Initialize data for state providers
     final choreState = Provider.of<ChoreState>(context, listen: false);
     choreState.setFamilyId(familyId);
     await choreState.loadChores();
-    
+
     final rewardState = Provider.of<RewardState>(context, listen: false);
     rewardState.setFamilyId(familyId);
     await rewardState.loadRewards();
-    
+
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const EnhancedParentDashboard()),
@@ -686,43 +690,72 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
         final childName = _childNameController.text.trim();
         final familyCode = _familyCodeController.text.trim();
-        
-        // Use the UserState provider to find or create the child
-        final userState = Provider.of<UserState>(context, listen: false);
-        
+
+        // Clean and validate the family code
+        final cleanedCode = familyCode.trim().replaceAll(' ', '');
+        if (cleanedCode.length != 6 ||
+            !RegExp(r'^\d{6}$').hasMatch(cleanedCode)) {
+          throw Exception('Invalid family code format. Please enter 6 digits');
+        }
+
+        // Find family by code
+        final familySnapshot =
+            await _firestoreService.findFamilyByCode(cleanedCode);
+        if (familySnapshot.docs.isEmpty) {
+          throw Exception('Invalid family code. Please check with your parent');
+        }
+
+        final familyDoc = familySnapshot.docs.first;
+        final familyId = familyDoc.id;
+
+        // Create a Firebase Auth account for the child first
+        // Use a unique email format for children
+        final childEmail = '${familyId}_${childName.hashCode}@chorepal.child';
+        final childPassword = 'child_${familyId}_${childName.hashCode}';
+
+        UserCredential credential;
         try {
-          final child = await userState.findOrCreateChild(childName, familyCode);
-          
-          if (child == null) {
-            throw Exception('Failed to join family. Please try again');
-          }
-          
-          // Set family ID for the state providers
-          final familyId = child.familyId;
-          
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Welcome, ${child.name}! You have ${child.points} points.'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            
-            await _initializeStateAndNavigateToChildDashboard(familyId, child.id);
-          }
+          // Try to sign in with existing credentials
+          credential = await _authService.signInWithEmailAndPassword(
+              childEmail, childPassword);
         } catch (e) {
-          // Handle specific errors for family code and display appropriate messages
-          String errorMessage = e.toString().replaceAll('Exception: ', '');
-          setState(() {
-            _errorMessage = errorMessage;
-            _isLoading = false;
-          });
+          // If sign in fails, create a new account
+          credential = await _authService.registerWithEmailAndPassword(
+              childEmail, childPassword);
+        }
+
+        // Use the Firebase Auth UID as the child ID
+        final childId = credential.user!.uid;
+
+        // Check if child exists in Firestore
+        final childDoc = await _firestoreService.users.doc(childId).get();
+        bool childExists = childDoc.exists &&
+            (childDoc.data() as Map<String, dynamic>)['isParent'] == false;
+
+        if (!childExists) {
+          // Create the child profile in Firestore using the Firebase Auth UID
+          await _firestoreService.createChildProfile(
+              childId, childName, familyId);
+          await _firestoreService.addChildToFamily(familyId, childId);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content:
+                  Text('Welcome, $childName! You have joined your family.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          await _initializeStateAndNavigateToChildDashboard(familyId, childId);
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              'Error: ${e.toString().replaceAll('Exception: ', '')}';
           _isLoading = false;
         });
       }
@@ -736,16 +769,17 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   /// Initializes state providers and navigates to child dashboard
-  Future<void> _initializeStateAndNavigateToChildDashboard(String familyId, String childId) async {
+  Future<void> _initializeStateAndNavigateToChildDashboard(
+      String familyId, String childId) async {
     // Initialize data for state providers
     final choreState = Provider.of<ChoreState>(context, listen: false);
     choreState.setFamilyId(familyId);
     await choreState.loadChores();
-    
+
     final rewardState = Provider.of<RewardState>(context, listen: false);
     rewardState.setFamilyId(familyId);
     await rewardState.loadRewards();
-    
+
     // Navigate to child dashboard
     if (!mounted) return;
     Navigator.of(context).pushReplacement(

@@ -3,11 +3,11 @@ import 'package:provider/provider.dart';
 import '../models/chore.dart';
 import '../models/chore_state.dart';
 import '../models/user_state.dart';
+import '../models/user.dart';
 import 'package:intl/intl.dart';
 
 class ChoreHistoryScreen extends StatelessWidget {
-  final String?
-      childId; // Optional - if passed, shows only this child's history
+  final String? childId; // Optional - if passed, shows only this child's history
 
   const ChoreHistoryScreen({Key? key, this.childId}) : super(key: key);
 
@@ -15,13 +15,12 @@ class ChoreHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text(childId != null ? 'My Chore History' : 'Family Chore History'),
+        title: Text(childId != null ? 'My Chore History' : 'Family Chore History'),
       ),
       body: Consumer2<ChoreState, UserState>(
         builder: (context, choreState, userState, child) {
           final completedChores = _getCompletedChores(choreState);
-
+          
           if (completedChores.isEmpty) {
             return const Center(
               child: Column(
@@ -42,10 +41,10 @@ class ChoreHistoryScreen extends StatelessWidget {
               ),
             );
           }
-
+          
           // Group chores by month
           final groupedChores = _groupChoresByMonth(completedChores);
-
+          
           return RefreshIndicator(
             onRefresh: () async {
               await choreState.loadChores();
@@ -56,14 +55,13 @@ class ChoreHistoryScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final monthKey = groupedChores.keys.elementAt(index);
                 final monthChores = groupedChores[monthKey]!;
-
+                
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Month header
                     Padding(
-                      padding: const EdgeInsets.only(
-                          top: 8.0, bottom: 8.0, left: 4.0),
+                      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0, left: 4.0),
                       child: Text(
                         monthKey,
                         style: const TextStyle(
@@ -80,8 +78,8 @@ class ChoreHistoryScreen extends StatelessWidget {
                       itemCount: monthChores.length,
                       itemBuilder: (context, choreIndex) {
                         return _buildCompactHistoryItem(
-                          context,
-                          monthChores[choreIndex],
+                          context, 
+                          monthChores[choreIndex], 
                           userState,
                         );
                       },
@@ -97,7 +95,7 @@ class ChoreHistoryScreen extends StatelessWidget {
       ),
     );
   }
-
+  
   // Get completed chores, filtering by childId if provided
   List<Chore> _getCompletedChores(ChoreState choreState) {
     if (childId != null) {
@@ -108,23 +106,23 @@ class ChoreHistoryScreen extends StatelessWidget {
       return choreState.completedChores;
     }
   }
-
+  
   // Group chores by month
   Map<String, List<Chore>> _groupChoresByMonth(List<Chore> chores) {
     final Map<String, List<Chore>> grouped = {};
-
+    
     for (final chore in chores) {
       if (chore.completedAt != null) {
         final monthKey = DateFormat('MMMM yyyy').format(chore.completedAt!);
-
+        
         if (!grouped.containsKey(monthKey)) {
           grouped[monthKey] = [];
         }
-
+        
         grouped[monthKey]!.add(chore);
       }
     }
-
+    
     // Sort the map keys by date (most recent first)
     final sortedKeys = grouped.keys.toList()
       ..sort((a, b) {
@@ -132,28 +130,31 @@ class ChoreHistoryScreen extends StatelessWidget {
         final bDate = DateFormat('MMMM yyyy').parse(b);
         return bDate.compareTo(aDate); // Descending order
       });
-
+    
     // Create a new map with the sorted keys
     final Map<String, List<Chore>> sortedGrouped = {};
     for (final key in sortedKeys) {
       sortedGrouped[key] = grouped[key]!;
     }
-
+    
     return sortedGrouped;
   }
 
   Widget _buildCompactHistoryItem(
-      BuildContext context, Chore chore, UserState userState) {
+    BuildContext context, 
+    Chore chore, 
+    UserState userState
+  ) {
     // Find the child name if available
     String? childName;
     if (chore.completedBy != null) {
       final child = userState.getChildById(chore.completedBy!);
       childName = child?.name;
     }
-
+    
     // Get priority color
     final priorityColor = _getPriorityColor(chore.priority);
-
+    
     return Card(
       elevation: 1,
       margin: const EdgeInsets.only(bottom: 8),
@@ -198,8 +199,7 @@ class ChoreHistoryScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 if (chore.completedAt != null) ...[
-                  Icon(Icons.calendar_today,
-                      size: 14, color: Colors.blue.shade700),
+                  Icon(Icons.calendar_today, size: 14, color: Colors.blue.shade700),
                   const SizedBox(width: 4),
                   Text(
                     DateFormat('MMM d').format(chore.completedAt!),
@@ -231,7 +231,7 @@ class ChoreHistoryScreen extends StatelessWidget {
         ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: 8,
+            horizontal: 8, 
             vertical: 4,
           ),
           decoration: BoxDecoration(
@@ -263,4 +263,4 @@ class ChoreHistoryScreen extends StatelessWidget {
         return Colors.blue;
     }
   }
-}
+} 

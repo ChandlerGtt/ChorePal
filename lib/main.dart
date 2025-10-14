@@ -2,12 +2,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'models/chore_state.dart';
 import 'models/reward_state.dart';
 import 'models/user_state.dart';
 import 'services/notification_service.dart';
+import 'services/auth_service.dart';
+import 'widgets/auth_wrapper.dart';
+import 'widgets/splash_screen.dart';
 
 void main() async {
   // Ensure Flutter is initialized
@@ -21,6 +25,9 @@ void main() async {
 
     // Initialize notification service
     await NotificationService().initialize();
+
+    // Initialize auth service with persistence
+    await AuthService().initialize();
 
     runApp(
       MultiProvider(
@@ -96,7 +103,6 @@ class ChoreApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xFF4CAF50);
-    final primaryColorDark = const Color(0xFF388E3C);
     final secondaryColor = const Color(0xFF2196F3);
     final backgroundColor = const Color(0xFFF5F5F5);
     final textColor = const Color(0xFF333333);
@@ -183,7 +189,22 @@ class ChoreApp extends StatelessWidget {
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
-      home: const LoginScreen(),
+      home: StreamBuilder<User?>(
+        stream: AuthService().authStateChanges,
+        builder: (context, snapshot) {
+          // Show splash screen while checking auth state
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SplashScreen();
+          }
+
+          // Show auth wrapper if user is logged in, login screen if not
+          if (snapshot.hasData) {
+            return const AuthWrapper();
+          } else {
+            return const LoginScreen();
+          }
+        },
+      ),
     );
   }
 }

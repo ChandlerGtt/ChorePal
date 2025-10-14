@@ -3,6 +3,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  // Initialize auth persistence for web
+  Future<void> initialize() async {
+    try {
+      // Set persistence for web - this ensures login state persists across browser sessions
+      await _auth.setPersistence(Persistence.LOCAL);
+    } catch (e) {
+      // Silently handle persistence errors - not critical for app functionality
+    }
+  }
+
   // Get current user
   User? get currentUser => _auth.currentUser;
 
