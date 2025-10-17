@@ -34,5 +34,20 @@ void main() {
 
     await Future.delayed(const Duration(seconds: 2));
 
+    await tester.tap(find.text('Leaderboard'));
+
+    await Future.delayed(const Duration(seconds:2));
+
+    await tester.tap(find.text('Children'));
+
+    await Future.delayed(const Duration(seconds:2));
+
+    await tester.tap(find.text('Rewards'));
+
+    await Future.delayed(const Duration(seconds:2));
+
+    await tester.tap(find.text('Chores'));
+
+    await Future.delayed(const Duration(seconds:2));
   });
 }
