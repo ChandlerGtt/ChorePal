@@ -7,6 +7,7 @@ import '../services/firestore_service.dart';
 import '../models/chore_state.dart';
 import '../models/reward_state.dart';
 import '../models/user_state.dart';
+import '../widgets/notification_helper.dart';
 import 'parent/enhanced_parent_dashboard.dart';
 import 'child/enhanced_child_dashboard.dart';
 
@@ -673,6 +674,13 @@ class _LoginScreenState extends State<LoginScreen>
     rewardState.setFamilyId(familyId);
     await rewardState.loadRewards();
 
+    // Set user context for notifications
+    final userState = Provider.of<UserState>(context, listen: false);
+    await userState.loadCurrentUser();
+    if (userState.currentUser != null) {
+      NotificationHelper.setCurrentUser(userState.currentUser);
+    }
+
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const EnhancedParentDashboard()),
@@ -708,42 +716,54 @@ class _LoginScreenState extends State<LoginScreen>
         final familyDoc = familySnapshot.docs.first;
         final familyId = familyDoc.id;
 
-        // Create a Firebase Auth account for the child first
-        // Use a unique email format for children
-        final childEmail = '${familyId}_${childName.hashCode}@chorepal.child';
-        final childPassword = 'child_${familyId}_${childName.hashCode}';
+        // First, check if a child with this name already exists in the family
+        final existingChild = await _firestoreService.findChildByNameInFamily(
+            childName, familyId);
 
-        UserCredential credential;
-        try {
-          // Try to sign in with existing credentials
-          credential = await _authService.signInWithEmailAndPassword(
-              childEmail, childPassword);
-        } catch (e) {
-          // If sign in fails, create a new account
-          credential = await _authService.registerWithEmailAndPassword(
-              childEmail, childPassword);
-        }
+        String childId;
+        if (existingChild != null) {
+          // Child already exists, use their existing ID
+          childId = existingChild.id;
+          print('Found existing child: $childName with ID: $childId');
+        } else {
+          // Create a new child
+          print('Creating new child: $childName');
 
-        // Use the Firebase Auth UID as the child ID
-        final childId = credential.user!.uid;
+          // Create a Firebase Auth account for the child
+          // Use a unique email format for children with timestamp to ensure uniqueness
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final childEmail =
+              '${familyId}_${childName}_$timestamp@chorepal.child';
+          final childPassword = 'child_${familyId}_${childName}_$timestamp';
 
-        // Check if child exists in Firestore
-        final childDoc = await _firestoreService.users.doc(childId).get();
-        bool childExists = childDoc.exists &&
-            (childDoc.data() as Map<String, dynamic>)['isParent'] == false;
+          UserCredential credential;
+          try {
+            // Try to sign in with existing credentials first
+            credential = await _authService.signInWithEmailAndPassword(
+                childEmail, childPassword);
+          } catch (e) {
+            // If sign in fails, create a new account
+            credential = await _authService.registerWithEmailAndPassword(
+                childEmail, childPassword);
+          }
 
-        if (!childExists) {
-          // Create the child profile in Firestore using the Firebase Auth UID
+          // Use the Firebase Auth UID as the child ID
+          childId = credential.user!.uid;
+
+          // Create the child profile in Firestore
           await _firestoreService.createChildProfile(
               childId, childName, familyId);
           await _firestoreService.addChildToFamily(familyId, childId);
         }
 
         if (mounted) {
+          final message = existingChild != null
+              ? 'Welcome back, $childName!'
+              : 'Welcome, $childName! You have joined your family.';
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content:
-                  Text('Welcome, $childName! You have joined your family.'),
+              content: Text(message),
               backgroundColor: Colors.green,
             ),
           );
@@ -779,6 +799,13 @@ class _LoginScreenState extends State<LoginScreen>
     final rewardState = Provider.of<RewardState>(context, listen: false);
     rewardState.setFamilyId(familyId);
     await rewardState.loadRewards();
+
+    // Set user context for notifications
+    final userState = Provider.of<UserState>(context, listen: false);
+    await userState.loadCurrentUser();
+    if (userState.currentUser != null) {
+      NotificationHelper.setCurrentUser(userState.currentUser);
+    }
 
     // Navigate to child dashboard
     if (!mounted) return;

@@ -5,6 +5,8 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/chore_state.dart';
 import '../models/reward_state.dart';
+import '../models/user.dart';
+import '../widgets/notification_helper.dart';
 import '../screens/login_screen.dart';
 import '../screens/parent/enhanced_parent_dashboard.dart';
 import '../screens/child/enhanced_child_dashboard.dart';
@@ -55,6 +57,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
       final userData = userDoc.data() as Map<String, dynamic>;
       final isParent = userData['isParent'] ?? false;
       final familyId = userData['familyId'] ?? '';
+
+      // Set user context for notifications
+      final currentUser = User.fromFirestore(user.uid, userData);
+      NotificationHelper.setCurrentUser(currentUser);
 
       if (isParent) {
         await _initializeParentDashboard(familyId);

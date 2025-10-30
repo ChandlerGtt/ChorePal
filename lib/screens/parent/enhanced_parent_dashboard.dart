@@ -735,6 +735,22 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                     ],
                   ),
                 ),
+                // Remove child button
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.person_remove,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    tooltip: 'Remove child from family',
+                    onPressed: () => _showRemoveChildDialog(childUser),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1429,5 +1445,165 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
         ),
       ),
     );
+  }
+
+  /// Shows a confirmation dialog for removing a child
+  void _showRemoveChildDialog(Child child) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.warning,
+                  color: Colors.red.shade700,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('Remove Child'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to remove ${child.name} from your family?',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: Colors.red.shade700, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          'This action will:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• Permanently delete ${child.name}\'s account',
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 14),
+                    ),
+                    Text(
+                      '• Remove all their points and progress',
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 14),
+                    ),
+                    Text(
+                      '• Delete their chore and reward history',
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 14),
+                    ),
+                    Text(
+                      '• This action cannot be undone',
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _removeChild(child);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Remove Child'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Removes a child from the family
+  Future<void> _removeChild(Child child) async {
+    try {
+      await Provider.of<UserState>(context, listen: false)
+          .removeChildFromFamily(child.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('${child.name} has been removed from the family'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Failed to remove child: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
   }
 }
