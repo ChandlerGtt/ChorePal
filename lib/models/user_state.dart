@@ -9,6 +9,7 @@ class UserState extends ChangeNotifier {
   
   User? _currentUser;
   List<Child> _childrenInFamily = [];
+  List<Parent> _parentInFamily = [];
   bool _isLoading = false;
   String? _familyId;
   String? _familyCode;
@@ -16,6 +17,7 @@ class UserState extends ChangeNotifier {
   
   User? get currentUser => _currentUser;
   List<Child> get childrenInFamily => _childrenInFamily;
+  List<Parent> get parentInFamily => _parentInFamily;
   bool get isLoading => _isLoading;
   String? get familyId => _familyId;
   String? get familyCode => _familyCode;

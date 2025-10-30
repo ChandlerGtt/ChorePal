@@ -1,5 +1,6 @@
 // lib/services/firestore_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'dart:math';
 import '../models/chore.dart';
 import '../models/reward.dart';
@@ -62,6 +63,25 @@ class FirestoreService {
         rethrow;
       }
       throw Exception('Failed to load user profile. Please check your connection.');
+    }
+  }
+
+  Future <User> parentExists(String parentEmail) async{
+    try {
+      DocumentSnapshot doc = await users.doc(parentEmail).get();
+      if(!doc.exists){
+        throw Exception('user does not exist');
+      }
+      return User.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
+    }
+
+    catch(e){
+
+      if(e.toString().contains('User profile not found')){
+        rethrow;
+      }
+
+      throw Exception('failed to load user profile');
     }
   }
 
@@ -147,6 +167,12 @@ class FirestoreService {
   Future<void> addChildToFamily(String familyId, String childId) {
     return families.doc(familyId).update({
       'childrenIds': FieldValue.arrayUnion([childId]),
+    });
+  }
+
+  Future<void> addParentToFamily(String familyId, String parentUid){
+    return families.doc(familyId).update({
+      'parentIds' : FieldValue.arrayUnion([parentUid]),
     });
   }
 

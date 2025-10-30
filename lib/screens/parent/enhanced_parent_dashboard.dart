@@ -1,4 +1,5 @@
 // lib/screens/parent/enhanced_parent_dashboard.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +22,8 @@ import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
 import '../../widgets/error_widget.dart';
 
+
+
 class EnhancedParentDashboard extends StatefulWidget {
   const EnhancedParentDashboard({super.key});
 
@@ -33,6 +36,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
   late TabController _tabController;
+  final TextEditingController _parentEmail = TextEditingController();
   String familyCode = 'Loading...';
 
   @override
@@ -49,9 +53,12 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     });
   }
 
+
+
   @override
   void dispose() {
     _tabController.dispose();
+    _parentEmail.dispose();
     super.dispose();
   }
 
@@ -66,6 +73,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
          }
        }
   }
+
 
   Future<void> _loadFamilyCode() async {
     try {
@@ -565,11 +573,56 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
   Widget _buildChildrenTab() {
     return Consumer2<UserState, ChoreState>(
       builder: (context, userState, choreState, child) {
+        //check if theres children associated with the user
         if (userState.childrenInFamily.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom:12.0),
+                      child : Row(
+                        children : [
+                          Expanded(
+                            child : TextField(
+                              controller : _parentEmail,
+                              decoration : const InputDecoration(
+                              labelText: 'enter Parent email to invite!',
+                              border : OutlineInputBorder(),
+                              prefixIcon : Icon(Icons.search),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          ElevatedButton(
+                            onPressed: () async {
+
+                              final email = _parentEmail.text.trim();
+                              if(email.isEmpty){
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content : Text('please enter an email')),
+                                );
+
+                                try{
+                                  final parent = await _firestoreService.parentExists(email);
+                                  await _firestoreService.addParentToFamily(userState.familyId.toString(), parent.id);
+                                } catch(e){
+                                  //not actually sure what the error should be but here we are
+                                }
+
+                              }
+
+                            },
+                            style : ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                              ),
+                            child: const Text('send'),
+                          ),
+                        ],
+                      ),
+                  ),
                 Icon(
                   Icons.people_outline,
                   size: 64,
@@ -619,9 +672,53 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
               },
               child: ListView(
                 padding: const EdgeInsets.all(16),
-                children: userState.childrenInFamily.map((childUser) {
+                children:[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom:12.0),
+                      child : Row(
+                        children : [
+                          Expanded(
+                            child : TextField(
+                              controller : _parentEmail,
+                              decoration : const InputDecoration(
+                              labelText: 'enter Parent email to invite!',
+                              border : OutlineInputBorder(),
+                              prefixIcon : Icon(Icons.search),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 8),
+
+                          ElevatedButton(
+                            onPressed: () async {
+                              final email = _parentEmail.text.trim();
+                              if(email.isEmpty){
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content : Text('please enter an email')),
+                                );
+                              }
+
+                              try{
+                                final parent = await _firestoreService.parentExists(email);
+                                await _firestoreService.addParentToFamily(userState.familyId.toString(), parent.id);
+                              } catch(e){
+                                //not actually sure what the error should be but here we are
+                              }
+
+                            },
+                            style : ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                              ),
+                            child: const Text('send'),
+                          ),
+                        ],
+                      ),
+                  ),
+                ...userState.childrenInFamily.map((childUser) {
                   return _buildChildCard(childUser, choreState, rewardState);
                 }).toList(),
+                        ],
               ),
             );
           },
@@ -1214,7 +1311,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: SwitchListTile(
-                        title: Row(
+                        title: const Row(
                           children: [
                             Icon(
                               Icons.priority_high, 
