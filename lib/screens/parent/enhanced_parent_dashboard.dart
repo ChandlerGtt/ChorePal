@@ -20,6 +20,7 @@ import '../../models/milestone.dart';
 import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
 import '../../widgets/error_widget.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class EnhancedParentDashboard extends StatefulWidget {
   const EnhancedParentDashboard({super.key});
@@ -189,6 +190,11 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
           icon: const Icon(Icons.logout),
           onPressed: _handleLogout,
         ),
+        IconButton(
+          tooltip:'sendTestEmail',
+          icon: const Icon(Icons.email_outlined),
+          onPressed: _triggerEmailFunction,
+        )
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(60),
@@ -237,6 +243,39 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
         ),
       ),
     );
+  }
+
+  Future<void> _triggerEmailFunction() async{
+
+    final userState = Provider.of<UserState>(context, listen:false);
+    final parentUser = userState.currentUser;
+
+    if (parentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No user is currently logged in.')),
+      );
+      return;
+    }
+
+    if (parentUser is! Parent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Logged-in user is not a Parent account.')),
+      );
+      return;
+    }
+
+    try{
+      final callable = FirebaseFunctions.instance.httpsCallable('sendEmail');
+      final result = await callable.call({
+        'to' : parentUser.email,
+        'subject' : 'ParentDashboard Test',
+        'message' : 'tiggered from the appbar Email button for ${parentUser.name}',
+      });
+    } catch (e) {
+      if(!mounted) return ;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('error sending email: $e')),
+      );
+    }
   }
 
   Future<void> _handleLogout() async {

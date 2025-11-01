@@ -13,6 +13,7 @@ import '../login_screen.dart';
 import '../reward_history_screen.dart';
 import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class EnhancedChildDashboard extends StatefulWidget {
   final String childId;
