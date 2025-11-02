@@ -194,6 +194,11 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
           tooltip:'sendTestEmail',
           icon: const Icon(Icons.email_outlined),
           onPressed: _triggerEmailFunction,
+        ),
+        IconButton(
+          tooltip:'sendsms',
+          icon: const Icon(Icons.sms),
+          onPressed: _triggerSMSFunction,
         )
       ],
       bottom: PreferredSize(
@@ -245,6 +250,24 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     );
   }
 
+  Future<void>_triggerSMSFunction() async{
+    try {
+      final sendSMS = FirebaseFunctions.instance.httpsCallable('sms');
+      final result = await sendSMS.call({
+        'to': "2148433202",
+        'message': 'Test SMS from your Firebase app!'
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Test SMS sent successfully!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to send SMS: $e')),
+      );
+    }
+  }
+
+
   Future<void> _triggerEmailFunction() async{
 
     final userState = Provider.of<UserState>(context, listen:false);
@@ -265,7 +288,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     }
 
     try{
-      final callable = FirebaseFunctions.instance.httpsCallable('sendEmail');
+      final callable = FirebaseFunctions.instance.httpsCallable('email');
       final result = await callable.call({
         'to' : parentUser.email,
         'subject' : 'ParentDashboard Test',
