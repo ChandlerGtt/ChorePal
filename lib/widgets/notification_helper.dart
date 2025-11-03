@@ -1,8 +1,12 @@
 import '../services/notification_service.dart';
+import '../services/email_service.dart';
+import '../services/sms_service.dart';
+import '../services/firestore_service.dart';
 import '../models/user.dart';
 
 class NotificationHelper {
   static final NotificationService _notificationService = NotificationService();
+  static final FirestoreService _firestoreService = FirestoreService();
 
   // Track current user context for notification routing
   static User? _currentUser;
@@ -15,6 +19,70 @@ class NotificationHelper {
   // Get current user context
   static User? getCurrentUser() {
     return _currentUser;
+  }
+
+  // Helper method to send multi-channel notifications
+  static Future<void> _sendMultiChannelNotification({
+    required String title,
+    required String body,
+    required User? user,
+    String? emailSubject,
+  }) async {
+    if (user == null) return;
+
+    // Refresh user preferences from Firestore
+    User? updatedUser;
+    try {
+      updatedUser = await _firestoreService.getUserById(user.id);
+    } catch (e) {
+      print('Error fetching user preferences: $e');
+      updatedUser = user; // Fallback to current user
+    }
+
+    // Send push notification if enabled
+    if (updatedUser.pushNotificationsEnabled) {
+      try {
+        await _notificationService.showNotification(
+          id: DateTime.now().millisecondsSinceEpoch % 100000,
+          title: title,
+          body: body,
+        );
+      } catch (e) {
+        print('Error sending push notification: $e');
+      }
+    }
+
+    // Send email if enabled and user is Parent with email
+    if (updatedUser.emailNotificationsEnabled && updatedUser is Parent) {
+      try {
+        final emailTitle = emailSubject ?? title;
+        await EmailService.sendEmail(
+          updatedUser.email,
+          emailTitle,
+          body,
+        );
+      } catch (e) {
+        print('Error sending email: $e');
+      }
+    }
+
+    // Send SMS if enabled and phone number exists
+    if (updatedUser.smsNotificationsEnabled) {
+      String? phoneNumber;
+      if (updatedUser is Parent && updatedUser.phoneNumber != null) {
+        phoneNumber = updatedUser.phoneNumber;
+      } else if (updatedUser is Child && updatedUser.phoneNumber != null) {
+        phoneNumber = updatedUser.phoneNumber;
+      }
+
+      if (phoneNumber != null && phoneNumber.isNotEmpty) {
+        try {
+          await SMSService.sendSMS(phoneNumber, '$title\n$body');
+        } catch (e) {
+          print('Error sending SMS: $e');
+        }
+      }
+    }
   }
 
   // Show a simple test notification
@@ -77,11 +145,13 @@ class NotificationHelper {
       String childName, String choreName) async {
     // Only show this notification to parents
     if (_currentUser != null && _currentUser!.isParent) {
-      await _notificationService.showNotification(
-        id: 5,
+      String body =
+          '$childName completed "$choreName" and is waiting for your approval.';
+
+      await _sendMultiChannelNotification(
         title: 'Chore Completed! 📋',
-        body:
-            '$childName completed "$choreName" and is waiting for your approval.',
+        body: body,
+        user: _currentUser,
       );
     } else {
       print(
@@ -94,11 +164,13 @@ class NotificationHelper {
       String choreName, int points) async {
     // Only show this notification to children
     if (_currentUser != null && !_currentUser!.isParent) {
-      await _notificationService.showNotification(
-        id: 6,
+      String body =
+          'Great job! "$choreName" was approved. You earned $points points!';
+
+      await _sendMultiChannelNotification(
         title: 'Chore Approved! ✅',
-        body:
-            'Great job! "$choreName" was approved. You earned $points points!',
+        body: body,
+        user: _currentUser,
       );
     } else {
       print(
@@ -117,10 +189,10 @@ class NotificationHelper {
           ? 'You have $pendingCount chore${pendingCount > 1 ? 's' : ''} to complete today!'
           : 'Great job! All your chores are done for today! 🎉';
 
-      await _notificationService.showNotification(
-        id: 10,
+      await _sendMultiChannelNotification(
         title: 'Daily Chore Check-in 📋',
         body: body,
+        user: _currentUser,
       );
     }
   }
@@ -135,10 +207,10 @@ class NotificationHelper {
         choreList += ' and ${overdueChores.length - 3} more';
       }
 
-      await _notificationService.showNotification(
-        id: 11,
+      await _sendMultiChannelNotification(
         title: 'Overdue Chores Alert ⚠️',
         body: 'You have overdue chores: $choreList',
+        user: _currentUser,
       );
     }
   }
@@ -159,10 +231,10 @@ class NotificationHelper {
               ? 'Amazing! $streakDays days straight!'
               : 'Great job! $streakDays days in a row!';
 
-      await _notificationService.showNotification(
-        id: 12,
+      await _sendMultiChannelNotification(
         title: 'Streak Achievement $emoji',
         body: message,
+        user: _currentUser,
       );
     }
   }
@@ -180,11 +252,14 @@ class NotificationHelper {
               ? 'Great job!'
               : 'Keep it up!';
 
-      await _notificationService.showNotification(
-        id: 13,
+      String body =
+          '$performance You completed $completedChores/$totalChores chores and earned $pointsEarned points!';
+
+      await _sendMultiChannelNotification(
         title: 'Weekly Summary 📊',
-        body:
-            '$performance You completed $completedChores/$totalChores chores and earned $pointsEarned points!',
+        body: body,
+        user: _currentUser,
+        emailSubject: 'ChorePal Weekly Summary',
       );
     }
   }
@@ -195,13 +270,14 @@ class NotificationHelper {
     // Only show this notification to children
     if (_currentUser != null && !_currentUser!.isParent) {
       int pointsToGo = pointsNeeded - currentPoints;
+      String body = pointsToGo <= 0
+          ? 'You can now afford "$rewardName"! Redeem it?'
+          : 'You\'re $pointsToGo points away from "$rewardName"!';
 
-      await _notificationService.showNotification(
-        id: 14,
+      await _sendMultiChannelNotification(
         title: 'Reward Available! 🎁',
-        body: pointsToGo <= 0
-            ? 'You can now afford "$rewardName"! Redeem it?'
-            : 'You\'re $pointsToGo points away from "$rewardName"!',
+        body: body,
+        user: _currentUser,
       );
     }
   }
@@ -211,10 +287,10 @@ class NotificationHelper {
       String childName, String choreName) async {
     // Only show this notification to children
     if (_currentUser != null && !_currentUser!.isParent) {
-      await _notificationService.showNotification(
-        id: 15,
+      await _sendMultiChannelNotification(
         title: 'New Chore Assigned 📝',
         body: 'You have a new chore: "$choreName"',
+        user: _currentUser,
       );
     }
   }
@@ -223,11 +299,13 @@ class NotificationHelper {
       String parentName, String childName, String choreName) async {
     // Only show this notification to parents
     if (_currentUser != null && _currentUser!.isParent) {
-      await _notificationService.showNotification(
-        id: 16,
+      String body =
+          '$childName completed "$choreName" and is waiting for your approval.';
+
+      await _sendMultiChannelNotification(
         title: 'Approval Needed 👨‍👩‍👧‍👦',
-        body:
-            '$childName completed "$choreName" and is waiting for your approval.',
+        body: body,
+        user: _currentUser,
       );
     }
   }
@@ -236,11 +314,13 @@ class NotificationHelper {
   static Future<void> showStreakAtRisk(String childName, int streakDays) async {
     // Only show this notification to children
     if (_currentUser != null && !_currentUser!.isParent) {
-      await _notificationService.showNotification(
-        id: 17,
+      String body =
+          'Your $streakDays-day streak is at risk! Complete a chore today to keep it going!';
+
+      await _sendMultiChannelNotification(
         title: 'Streak at Risk! 🔥',
-        body:
-            'Your $streakDays-day streak is at risk! Complete a chore today to keep it going!',
+        body: body,
+        user: _currentUser,
       );
     }
   }

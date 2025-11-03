@@ -21,7 +21,7 @@ class FirestoreService {
 
   /// Creates a new parent user profile.
   Future<void> createParentProfile(String uid, String name, String email,
-      {String? familyId}) async {
+      {String? familyId, String? phoneNumber}) async {
     try {
       await users.doc(uid).set({
         'name': name,
@@ -29,6 +29,10 @@ class FirestoreService {
         'isParent': true,
         'familyId': familyId ?? '',
         'points': 0,
+        'pushNotificationsEnabled': true,
+        'emailNotificationsEnabled': true,
+        'smsNotificationsEnabled': false,
+        if (phoneNumber != null && phoneNumber.isNotEmpty) 'phoneNumber': phoneNumber,
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
@@ -45,6 +49,9 @@ class FirestoreService {
       'points': 0,
       'completedChores': [],
       'redeemedRewards': [],
+      'pushNotificationsEnabled': true,
+      'emailNotificationsEnabled': true,
+      'smsNotificationsEnabled': false,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -87,16 +94,22 @@ class FirestoreService {
   Future<Child?> findChildByNameInFamily(
       String childName, String familyId) async {
     try {
+      // Normalize the input name to lowercase for case-insensitive comparison
+      final normalizedInputName = childName.trim().toLowerCase();
+      
+      // Query all children in the family (without name filter since Firestore is case-sensitive)
       QuerySnapshot snapshot = await users
           .where('familyId', isEqualTo: familyId)
           .where('isParent', isEqualTo: false)
-          .where('name', isEqualTo: childName)
           .get();
 
-      if (snapshot.docs.isNotEmpty) {
-        // Return the first child found with this name
-        final doc = snapshot.docs.first;
-        return Child.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
+      // Find the child with matching name (case-insensitive)
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final storedName = data['name']?.toString().trim().toLowerCase() ?? '';
+        if (storedName == normalizedInputName) {
+          return Child.fromFirestore(doc.id, data);
+        }
       }
 
       return null;
@@ -409,5 +422,54 @@ class FirestoreService {
     }
 
     return rewardsByTier;
+  }
+
+  // ----------------------
+  // Notification Preferences Methods
+  // ----------------------
+
+  /// Updates notification preferences for a user
+  /// Validates that phone number is provided when SMS notifications are enabled
+  Future<void> updateNotificationPreferences(
+    String userId, {
+    bool? pushNotificationsEnabled,
+    bool? emailNotificationsEnabled,
+    bool? smsNotificationsEnabled,
+    String? phoneNumber,
+  }) async {
+    try {
+      Map<String, dynamic> updates = {};
+
+      if (pushNotificationsEnabled != null) {
+        updates['pushNotificationsEnabled'] = pushNotificationsEnabled;
+      }
+      if (emailNotificationsEnabled != null) {
+        updates['emailNotificationsEnabled'] = emailNotificationsEnabled;
+      }
+      if (smsNotificationsEnabled != null) {
+        updates['smsNotificationsEnabled'] = smsNotificationsEnabled;
+        
+        // Validate phone number when SMS is enabled
+        if (smsNotificationsEnabled) {
+          if (phoneNumber == null || phoneNumber.trim().isEmpty) {
+            throw Exception('Phone number is required when SMS notifications are enabled');
+          }
+          updates['phoneNumber'] = phoneNumber.trim();
+        }
+      }
+      
+      if (phoneNumber != null) {
+        updates['phoneNumber'] = phoneNumber.trim();
+      }
+
+      if (updates.isNotEmpty) {
+        await users.doc(userId).update(updates);
+      }
+    } catch (e) {
+      if (e.toString().contains('Phone number is required')) {
+        rethrow;
+      }
+      throw Exception('Failed to update notification preferences. Please try again.');
+    }
   }
 }

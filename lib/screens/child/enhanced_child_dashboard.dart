@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../models/chore_state.dart';
 import '../../models/reward_state.dart';
 import '../../models/milestone.dart';
-import '../../widgets/enhanced_chore_card.dart';
 import '../../widgets/reward_card.dart';
 import '../../widgets/enhanced_milestone_dialog.dart';
 import '../../services/firestore_service.dart';
@@ -12,6 +11,10 @@ import '../login_screen.dart';
 import '../reward_history_screen.dart';
 import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
+import '../settings_screen.dart';
+import '../../widgets/professional_empty_state.dart';
+import '../../widgets/modern_chore_card.dart';
+import '../../utils/chorepal_colors.dart';
 
 class EnhancedChildDashboard extends StatefulWidget {
   final String childId;
@@ -89,142 +92,240 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My ChorePal'),
-        actions: [
-          PopupMenuButton<String>(
-            tooltip: 'History',
-            icon: const Icon(Icons.history),
-            onSelected: (value) {
-              if (value == 'chores') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        ChoreHistoryScreen(childId: widget.childId),
+      extendBodyBehindAppBar: false,
+      appBar: _buildAppBar(),
+      body: Builder(
+        builder: (context) {
+          final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+          return Container(
+            decoration: BoxDecoration(
+              gradient: isDarkMode 
+                  ? ChorePalColors.darkBackgroundGradient 
+                  : ChorePalColors.backgroundGradient,
+            ),
+            child: _isLoading
+                ? const ProfessionalLoadingIndicator(
+                    message: 'Loading your dashboard...',
+                  )
+                : TabBarView(
+                    controller: _tabController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      _buildChoresTab(),
+                      _buildRewardsTab(),
+                      _buildLeaderboardTab(),
+                    ],
                   ),
-                );
-              } else if (value == 'rewards') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        RewardHistoryScreen(childId: widget.childId),
-                  ),
-                );
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'chores',
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.green),
-                    SizedBox(width: 8),
-                    Text('My Completed Chores'),
-                  ],
+          );
+        },
+      ),
+      bottomNavigationBar: _buildBottomNavBar(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return AppBar(
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: isDarkMode 
+              ? ChorePalColors.darkBlueGradient
+              : ChorePalColors.primaryGradient,
+        ),
+      ),
+      title: const Text('My ChorePal'),
+      actions: [
+        PopupMenuButton<String>(
+          tooltip: 'Menu',
+          icon: const Icon(Icons.more_vert),
+          onSelected: (value) {
+            if (value == 'chores') {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ChoreHistoryScreen(childId: widget.childId),
                 ),
+              );
+            } else if (value == 'rewards') {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      RewardHistoryScreen(childId: widget.childId),
+                ),
+              );
+            } else if (value == 'settings') {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'chores',
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green),
+                  SizedBox(width: 8),
+                  Text('My Completed Chores'),
+                ],
               ),
-              const PopupMenuItem(
-                value: 'rewards',
-                child: Row(
-                  children: [
-                    Icon(Icons.card_giftcard, color: Colors.purple),
-                    SizedBox(width: 8),
-                    Text('My Redeemed Rewards'),
-                  ],
+            ),
+            const PopupMenuItem(
+              value: 'rewards',
+              child: Row(
+                children: [
+                  Icon(Icons.card_giftcard, color: Colors.purple),
+                  SizedBox(width: 8),
+                  Text('My Redeemed Rewards'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'settings',
+              child: Row(
+                children: [
+                  Icon(Icons.settings, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text('Settings'),
+                ],
+              ),
+            ),
+          ],
+        ),
+        IconButton(
+          icon: const Icon(Icons.settings),
+          tooltip: 'Settings',
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const SettingsScreen(),
+              ),
+            );
+          },
+        ),
+        Container(
+          margin: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.amber.shade300, Colors.amber.shade500],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.amber.withOpacity(0.3),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.stars, color: Colors.white, size: 16),
+              const SizedBox(width: 4),
+              Text(
+                '$_points Points',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          // Enhanced points display with animations
-          Container(
-            margin: const EdgeInsets.all(8.0),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.amber.shade300, Colors.amber.shade500],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.stars, color: Colors.white, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  '$_points Points',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            },
+        ),
+        IconButton(
+          icon: const Icon(Icons.logout),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomNavBar() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDarkMode 
+            ? ChorePalColors.darkBlueGradient
+            : ChorePalColors.primaryGradient,
+        boxShadow: [
+          BoxShadow(
+            color: (isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.skyBlue)
+                .withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Material(
-            color: Theme.of(context).primaryColor,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white.withOpacity(0.6),
-              indicatorColor: Colors.white,
-              indicatorWeight: 3,
-              labelStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-              unselectedLabelStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.normal,
-                color: Colors.white,
-              ),
-              tabs: const [
-                Tab(
-                  icon: Icon(Icons.checklist),
-                  text: 'My Chores',
-                ),
-                Tab(
-                  icon: Icon(Icons.card_giftcard),
-                  text: 'Rewards',
-                ),
-                Tab(
-                  icon: Icon(Icons.emoji_events),
-                  text: 'Leaderboard',
-                ),
-              ],
-            ),
+      ),
+      child: SafeArea(
+        child: Container(
+          height: 70,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.checklist, 'Chores', 0),
+              _buildNavItem(Icons.card_giftcard, 'Rewards', 1),
+              _buildNavItem(Icons.emoji_events, 'Leaderboard', 2),
+            ],
           ),
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-              controller: _tabController,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                _buildChoresTab(),
-                _buildRewardsTab(),
-                _buildLeaderboardTab(),
-              ],
-            ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    final isSelected = _tabController.index == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          _tabController.animateTo(index);
+          setState(() {});
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Colors.white.withOpacity(0.25)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected
+                ? Border.all(
+                    color: Colors.white.withOpacity(0.5),
+                    width: 1.5,
+                  )
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: Colors.white,
+                size: isSelected ? 26 : 22,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isSelected ? 11 : 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -232,7 +333,9 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
     return Consumer<ChoreState>(
       builder: (context, choreState, child) {
         if (choreState.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const ProfessionalLoadingIndicator(
+            message: 'Loading your chores...',
+          );
         }
 
         final myChores = choreState.chores
@@ -244,39 +347,14 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
 
         if (myChores.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.celebration,
-                    size: 64,
-                    color: Colors.green.shade400,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'All caught up!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'No chores assigned yet. Great job!',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: ProfessionalEmptyState(
+                icon: Icons.celebration,
+                title: 'All Caught Up!',
+                subtitle: 'You don\'t have any chores assigned right now. Great job staying on top of your tasks!',
+                iconColor: Colors.green,
+              ),
             ),
           );
         }
@@ -291,7 +369,7 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
             itemCount: myChores.length,
             itemBuilder: (context, index) {
               final chore = myChores[index];
-              return EnhancedChoreCard(
+              return ModernChoreCard(
                 chore: chore,
                 isChild: true,
                 onToggleComplete: (id) async {
@@ -341,35 +419,21 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
     return Consumer<RewardState>(
       builder: (context, rewardState, child) {
         if (rewardState.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const ProfessionalLoadingIndicator(
+            message: 'Loading rewards...',
+          );
         }
 
         if (rewardState.rewards.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.card_giftcard_outlined,
-                  size: 64,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No rewards available yet',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Ask your parents to add some rewards!',
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: ProfessionalEmptyState(
+                icon: Icons.card_giftcard_outlined,
+                title: 'No Rewards Available',
+                subtitle: 'Ask your parents to add some exciting rewards you can earn with your points!',
+                iconColor: Colors.purple,
+              ),
             ),
           );
         }
