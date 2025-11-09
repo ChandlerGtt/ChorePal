@@ -8,6 +8,9 @@ class User {
   final int points;
   final DateTime createdAt;
   final bool isParent;
+  final bool pushNotificationsEnabled;
+  final bool emailNotificationsEnabled;
+  final bool smsNotificationsEnabled;
 
   User({
     required this.id,
@@ -16,6 +19,9 @@ class User {
     this.points = 0,
     DateTime? createdAt,
     required this.isParent,
+    this.pushNotificationsEnabled = true,
+    this.emailNotificationsEnabled = true,
+    this.smsNotificationsEnabled = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Create a User from Firestore data
@@ -37,6 +43,9 @@ class User {
       'points': points,
       'createdAt': createdAt,
       'isParent': isParent,
+      'pushNotificationsEnabled': pushNotificationsEnabled,
+      'emailNotificationsEnabled': emailNotificationsEnabled,
+      'smsNotificationsEnabled': smsNotificationsEnabled,
     };
   }
 }
@@ -44,19 +53,27 @@ class User {
 // Parent subclass
 class Parent extends User {
   final String email;
+  final String? phoneNumber;
 
   Parent({
     required String id,
     required String name,
     required String familyId,
     required this.email,
+    this.phoneNumber,
     DateTime? createdAt,
+    bool pushNotificationsEnabled = true,
+    bool emailNotificationsEnabled = true,
+    bool smsNotificationsEnabled = false,
   }) : super(
     id: id,
     name: name,
     familyId: familyId,
     createdAt: createdAt,
     isParent: true,
+    pushNotificationsEnabled: pushNotificationsEnabled,
+    emailNotificationsEnabled: emailNotificationsEnabled,
+    smsNotificationsEnabled: smsNotificationsEnabled,
   );
 
   // Create a Parent from Firestore data
@@ -66,9 +83,13 @@ class Parent extends User {
       name: data['name'] ?? '',
       familyId: data['familyId'] ?? '',
       email: data['email'] ?? '',
+      phoneNumber: data['phoneNumber'] as String?,
       createdAt: data['createdAt'] != null 
           ? (data['createdAt']).toDate() 
           : DateTime.now(),
+      pushNotificationsEnabled: data['pushNotificationsEnabled'] ?? true,
+      emailNotificationsEnabled: data['emailNotificationsEnabled'] ?? true,
+      smsNotificationsEnabled: data['smsNotificationsEnabled'] ?? false,
     );
   }
 
@@ -79,6 +100,7 @@ class Parent extends User {
     return {
       ...baseMap,
       'email': email,
+      if (phoneNumber != null) 'phoneNumber': phoneNumber,
     };
   }
 }
@@ -87,6 +109,7 @@ class Parent extends User {
 class Child extends User {
   final List<String> completedChores;
   final List<String> redeemedRewards;
+  final String? phoneNumber;
 
   Child({
     required String id,
@@ -95,7 +118,11 @@ class Child extends User {
     int points = 0,
     this.completedChores = const [],
     this.redeemedRewards = const [],
+    this.phoneNumber,
     DateTime? createdAt,
+    bool pushNotificationsEnabled = true,
+    bool emailNotificationsEnabled = true,
+    bool smsNotificationsEnabled = false,
   }) : super(
     id: id,
     name: name,
@@ -103,6 +130,9 @@ class Child extends User {
     points: points,
     createdAt: createdAt,
     isParent: false,
+    pushNotificationsEnabled: pushNotificationsEnabled,
+    emailNotificationsEnabled: emailNotificationsEnabled,
+    smsNotificationsEnabled: smsNotificationsEnabled,
   );
 
   // Create a Child from Firestore data
@@ -114,9 +144,13 @@ class Child extends User {
       points: data['points'] ?? 0,
       completedChores: List<String>.from(data['completedChores'] ?? []),
       redeemedRewards: List<String>.from(data['redeemedRewards'] ?? []),
+      phoneNumber: data['phoneNumber'] as String?,
       createdAt: data['createdAt'] != null 
           ? (data['createdAt']).toDate() 
           : DateTime.now(),
+      pushNotificationsEnabled: data['pushNotificationsEnabled'] ?? true,
+      emailNotificationsEnabled: data['emailNotificationsEnabled'] ?? true,
+      smsNotificationsEnabled: data['smsNotificationsEnabled'] ?? false,
     );
   }
 
@@ -128,6 +162,7 @@ class Child extends User {
       ...baseMap,
       'completedChores': completedChores,
       'redeemedRewards': redeemedRewards,
+      if (phoneNumber != null) 'phoneNumber': phoneNumber,
     };
   }
 
@@ -143,7 +178,11 @@ class Child extends User {
       points: points,
       completedChores: updatedCompletedChores,
       redeemedRewards: redeemedRewards,
+      phoneNumber: phoneNumber,
       createdAt: createdAt,
+      pushNotificationsEnabled: pushNotificationsEnabled,
+      emailNotificationsEnabled: emailNotificationsEnabled,
+      smsNotificationsEnabled: smsNotificationsEnabled,
     );
   }
 
@@ -159,7 +198,11 @@ class Child extends User {
       points: points,
       completedChores: completedChores,
       redeemedRewards: updatedRedeemedRewards,
+      phoneNumber: phoneNumber,
       createdAt: createdAt,
+      pushNotificationsEnabled: pushNotificationsEnabled,
+      emailNotificationsEnabled: emailNotificationsEnabled,
+      smsNotificationsEnabled: smsNotificationsEnabled,
     );
   }
 
@@ -172,7 +215,11 @@ class Child extends User {
       points: newPoints,
       completedChores: completedChores,
       redeemedRewards: redeemedRewards,
+      phoneNumber: phoneNumber,
       createdAt: createdAt,
+      pushNotificationsEnabled: pushNotificationsEnabled,
+      emailNotificationsEnabled: emailNotificationsEnabled,
+      smsNotificationsEnabled: smsNotificationsEnabled,
     );
   }
 } 
