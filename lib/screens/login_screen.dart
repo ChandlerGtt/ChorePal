@@ -43,7 +43,6 @@ class _LoginScreenState extends State<LoginScreen>
   // Child login fields
   final _childNameController = TextEditingController();
   final _familyCodeController = TextEditingController();
-
   // Services
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();

@@ -260,7 +260,6 @@ class ChoreState extends ChangeNotifier {
     try {
       _isLoading = true;
       notifyListeners();
-
       // Create a new list with the child added
       List<String> newAssignedTo = List.from(chore.assignedTo);
       if (!newAssignedTo.contains(childId)) {

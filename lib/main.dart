@@ -18,7 +18,6 @@ import 'services/theme_service.dart';
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-
   try {
     // Initialize Firebase
     await Firebase.initializeApp(

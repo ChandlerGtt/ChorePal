@@ -16,7 +16,6 @@ class RewardState extends ChangeNotifier {
   Map<String, List<Reward>> get rewardsByTier => _rewardsByTier;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-
   void setFamilyId(String familyId) {
     _familyId = familyId;
   }

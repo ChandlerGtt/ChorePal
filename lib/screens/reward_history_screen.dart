@@ -5,6 +5,7 @@ import '../models/reward_state.dart';
 import '../models/user_state.dart';
 import 'package:intl/intl.dart';
 
+
 class RewardHistoryScreen extends StatelessWidget {
   final String?
       childId; // Optional - if passed, shows only this child's history
