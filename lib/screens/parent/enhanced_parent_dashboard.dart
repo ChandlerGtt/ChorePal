@@ -341,7 +341,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
         ),
       );
 
-      const testNumber = '+12148433202';
+      const testNumber = '+18777804236';
       final success = await SMSService.sendTestSMS();
 
       if (mounted) {

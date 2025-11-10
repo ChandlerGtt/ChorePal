@@ -71,12 +71,12 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: isDarkMode 
-              ? ChorePalColors.darkBackgroundGradient 
+          gradient: isDarkMode
+              ? ChorePalColors.darkBackgroundGradient
               : ChorePalColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the app header with logo and title
   Widget _buildHeader() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       children: [
         const SizedBox(height: 40),
@@ -118,16 +118,17 @@ class _LoginScreenState extends State<LoginScreen>
         Text(
           'ChorePal',
           style: Theme.of(context).textTheme.displayLarge?.copyWith(
-            color: isDarkMode ? Colors.white : const Color(0xFF333333),
-            fontWeight: FontWeight.bold,
-          ),
+                color: isDarkMode ? Colors.white : const Color(0xFF333333),
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 10),
         Text(
           'Helping families manage chores together',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: isDarkMode ? Colors.grey.shade300 : const Color(0xFF666666),
-          ),
+                color:
+                    isDarkMode ? Colors.grey.shade300 : const Color(0xFF666666),
+              ),
         ),
         const SizedBox(height: 30),
       ],
@@ -137,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the tab selector
   Widget _buildTabSelector() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       height: 50,
       decoration: BoxDecoration(
@@ -158,15 +159,14 @@ class _LoginScreenState extends State<LoginScreen>
         child: TabBar(
           controller: _tabController,
           indicator: BoxDecoration(
-            color: isDarkMode 
-                ? ChorePalColors.darkBlue 
+            color: isDarkMode
+                ? ChorePalColors.darkBlue
                 : Theme.of(context).primaryColor,
             borderRadius: BorderRadius.circular(25),
           ),
           labelColor: Colors.white,
-          unselectedLabelColor: isDarkMode 
-              ? Colors.grey.shade300 
-              : const Color(0xFF333333),
+          unselectedLabelColor:
+              isDarkMode ? Colors.grey.shade300 : const Color(0xFF333333),
           labelStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the parent login form
   Widget _buildParentLoginForm() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -217,10 +217,12 @@ class _LoginScreenState extends State<LoginScreen>
                   Text(
                     _isRegistering ? 'Create Parent Account' : 'Parent Login',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: isDarkMode ? Colors.white : const Color(0xFF333333),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
+                          color: isDarkMode
+                              ? Colors.white
+                              : const Color(0xFF333333),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
@@ -246,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the phone number field for parent registration
   Widget _buildPhoneNumberField() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       children: [
         TextFormField(
@@ -254,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen>
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
             labelText: 'Phone Number (Optional)',
-            hintText: '+12148433202 (E.164 format)',
+            hintText: '+18777804236 (E.164 format)',
             prefixIcon: isDarkMode
                 ? Container(
                     decoration: const BoxDecoration(
@@ -262,7 +264,8 @@ class _LoginScreenState extends State<LoginScreen>
                       shape: BoxShape.circle,
                     ),
                     margin: const EdgeInsets.all(8),
-                    child: const Icon(Icons.phone, color: Colors.white, size: 20),
+                    child:
+                        const Icon(Icons.phone, color: Colors.white, size: 20),
                   )
                 : Icon(Icons.phone, color: ChorePalColors.darkBlue),
             border: OutlineInputBorder(
@@ -280,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen>
           ),
           validator: (value) {
             if (value != null && value.isNotEmpty && !value.startsWith('+')) {
-              return 'Phone number must be in E.164 format (e.g., +12148433202)';
+              return 'Phone number must be in E.164 format (e.g., +18777804236)';
             }
             return null;
           },
@@ -293,7 +296,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the name field for parent registration
   Widget _buildNameField() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       children: [
         TextFormField(
@@ -307,7 +310,8 @@ class _LoginScreenState extends State<LoginScreen>
                       shape: BoxShape.circle,
                     ),
                     margin: const EdgeInsets.all(8),
-                    child: const Icon(Icons.person, color: Colors.white, size: 20),
+                    child:
+                        const Icon(Icons.person, color: Colors.white, size: 20),
                   )
                 : Icon(Icons.person, color: ChorePalColors.darkBlue),
             border: OutlineInputBorder(
@@ -333,7 +337,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the email field
   Widget _buildEmailField() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return TextFormField(
       controller: _emailController,
       decoration: InputDecoration(
@@ -354,7 +358,8 @@ class _LoginScreenState extends State<LoginScreen>
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(
-            color: isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
+            color:
+                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
             width: 2,
           ),
         ),
@@ -380,7 +385,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the password field
   Widget _buildPasswordField() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return TextFormField(
       controller: _passwordController,
       obscureText: true,
@@ -402,7 +407,8 @@ class _LoginScreenState extends State<LoginScreen>
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(
-            color: isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
+            color:
+                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
             width: 2,
           ),
         ),
@@ -453,7 +459,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the parent login/register button
   Widget _buildParentActionButton() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return SizedBox(
       width: double.infinity,
       height: 50,
@@ -495,7 +501,8 @@ class _LoginScreenState extends State<LoginScreen>
                         children: [
                           const Text(
                             'Login',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(width: 8),
                           const Icon(Icons.arrow_forward),
@@ -512,36 +519,36 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 elevation: 2,
               ),
-        onPressed: _isLoading ? null : _handleParentSubmit,
-        child: _isLoading
-            ? const SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 3,
-                ),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(_isRegistering ? Icons.person_add : Icons.login),
-                  const SizedBox(width: 8),
-                  Text(
-                    _isRegistering ? 'Create Account' : 'Login',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-      ),
+              onPressed: _isLoading ? null : _handleParentSubmit,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(_isRegistering ? Icons.person_add : Icons.login),
+                        const SizedBox(width: 8),
+                        Text(
+                          _isRegistering ? 'Create Account' : 'Login',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+            ),
     );
   }
 
   /// Builds the toggle button to switch between login and register
   Widget _buildToggleAuthModeButton() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return TextButton(
       onPressed: _isLoading ? null : _toggleParentAuthMode,
       child: ShaderMask(
@@ -564,7 +571,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the child login form
   Widget _buildChildLoginForm() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -594,10 +601,12 @@ class _LoginScreenState extends State<LoginScreen>
                   Text(
                     'Child Login',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: isDarkMode ? Colors.white : const Color(0xFF333333),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
+                          color: isDarkMode
+                              ? Colors.white
+                              : const Color(0xFF333333),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
@@ -647,7 +656,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the child name field
   Widget _buildChildNameField() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return TextFormField(
       controller: _childNameController,
       decoration: InputDecoration(
@@ -694,7 +703,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the family code field
   Widget _buildFamilyCodeField() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -713,7 +722,8 @@ class _LoginScreenState extends State<LoginScreen>
                       shape: BoxShape.circle,
                     ),
                     margin: const EdgeInsets.all(8),
-                    child: const Icon(Icons.numbers, color: Colors.white, size: 20),
+                    child: const Icon(Icons.numbers,
+                        color: Colors.white, size: 20),
                   )
                 : Icon(Icons.numbers, color: ChorePalColors.darkBlue),
             border: OutlineInputBorder(
@@ -755,7 +765,7 @@ class _LoginScreenState extends State<LoginScreen>
   /// Builds the child login button
   Widget _buildChildLoginButton() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return SizedBox(
       width: double.infinity,
       height: 50,
@@ -797,7 +807,8 @@ class _LoginScreenState extends State<LoginScreen>
                         children: [
                           Text(
                             'Login',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           SizedBox(width: 8),
                           Icon(Icons.arrow_forward),
@@ -814,28 +825,29 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 elevation: 2,
               ),
-        onPressed: _isLoading ? null : _handleChildLogin,
-        child: _isLoading
-            ? const SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 3,
-                ),
-              )
-            : const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.login),
-                  SizedBox(width: 8),
-                  Text(
-                    'Join Family',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-      ),
+              onPressed: _isLoading ? null : _handleChildLogin,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                  : const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.login),
+                        SizedBox(width: 8),
+                        Text(
+                          'Join Family',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+            ),
     );
   }
 
@@ -899,8 +911,8 @@ class _LoginScreenState extends State<LoginScreen>
       _nameController.text,
       _emailController.text,
       familyId: familyRef.id,
-      phoneNumber: _phoneNumberController.text.trim().isNotEmpty 
-          ? _phoneNumberController.text.trim() 
+      phoneNumber: _phoneNumberController.text.trim().isNotEmpty
+          ? _phoneNumberController.text.trim()
           : null,
     );
 

@@ -28,7 +28,7 @@ class SMSService {
   /// Send a test SMS to the hardcoded test number
   static Future<bool> sendTestSMS() async {
     try {
-      const testNumber = '+12148433202';
+      const testNumber = '+18777804236';
       const testMessage = 'Test SMS from ChorePal - This is a test message!';
       return await sendSMS(testNumber, testMessage);
     } catch (e) {
