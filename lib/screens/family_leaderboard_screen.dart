@@ -614,7 +614,9 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                       const SizedBox(height: 8),
 
                       // Stats row
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           _buildStatChip(
                             '${entry.child.points}',
@@ -623,7 +625,6 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                             Colors.amber,
                             entry.rank <= 3,
                           ),
-                          const SizedBox(width: 8),
                           _buildStatChip(
                             '${entry.completedChoresThisWeek}',
                             'this week',
@@ -631,8 +632,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                             Colors.green,
                             entry.rank <= 3,
                           ),
-                          if (entry.streak > 0) ...[
-                            const SizedBox(width: 8),
+                          if (entry.streak > 0)
                             _buildStatChip(
                               '${entry.streak}',
                               'day streak',
@@ -640,7 +640,6 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                               Colors.red,
                               entry.rank <= 3,
                             ),
-                          ],
                         ],
                       ),
                     ],

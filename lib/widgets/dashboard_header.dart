@@ -63,9 +63,12 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
               ),
               // Actions (menu, settings, etc.)
               if (actions != null)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: actions!,
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: actions!,
+                  ),
                 ),
             ],
           ),

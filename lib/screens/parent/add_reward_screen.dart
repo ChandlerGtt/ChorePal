@@ -24,12 +24,13 @@ class _AddRewardScreenState extends State<AddRewardScreen> {
       appBar: AppBar(
         title: const Text('Add New Reward'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
                 controller: _titleController,
@@ -96,11 +97,12 @@ class _AddRewardScreenState extends State<AddRewardScreen> {
                   }
                 },
               ),
-              const Spacer(),
+              const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _saveReward,
                 child: const Text('Save Reward'),
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),
