@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../models/chore.dart';
 import '../../models/chore_state.dart';
 import '../../models/user_state.dart';
-import '../../models/user.dart';
 
 class AssignChoreScreen extends StatefulWidget {
   final Chore chore;
@@ -102,7 +101,8 @@ class _AssignChoreScreenState extends State<AssignChoreScreen> {
             ),
             const Divider(),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Text(
                 'Assign to:',
                 style: Theme.of(context).textTheme.titleMedium,

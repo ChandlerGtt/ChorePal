@@ -1,11 +1,14 @@
 // lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/chore_state.dart';
 import '../models/reward_state.dart';
 import '../models/user_state.dart';
+import '../widgets/notification_helper.dart';
+import '../utils/chorepal_colors.dart';
 import 'parent/enhanced_parent_dashboard.dart';
 import 'child/enhanced_child_dashboard.dart';
 
@@ -17,37 +20,35 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   // Form keys
   final _parentFormKey = GlobalKey<FormState>();
   final _childFormKey = GlobalKey<FormState>();
-  
+
   // Tab controller
   late TabController _tabController;
-  
+
   // State variables
   bool _isLoading = false;
   String? _errorMessage;
   bool _isRegistering = false;
-  
+
   // Parent login fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
-  
+  final _phoneNumberController = TextEditingController();
+
   // Child login fields
   final _childNameController = TextEditingController();
   final _familyCodeController = TextEditingController();
-  
   // Services
   final AuthService _authService = AuthService();
   final FirestoreService _firestoreService = FirestoreService();
 
   // Theme colors
-  final Color _primaryColor = const Color(0xFF4CAF50); // Green
-  final Color _accentColor = const Color(0xFF2196F3); // Blue
-  final Color _backgroundColor = const Color(0xFFF5F5F5); // Light gray
-  final Color _textColor = const Color(0xFF333333); // Dark gray
+  // Removed hardcoded text color - now using Theme.of(context)
 
   @override
   void initState() {
@@ -61,6 +62,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
+    _phoneNumberController.dispose();
     _childNameController.dispose();
     _familyCodeController.dispose();
     super.dispose();
@@ -68,24 +70,32 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: _backgroundColor,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildTabSelector(),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _buildParentLoginForm(),
-                  _buildChildLoginForm(),
-                ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDarkMode
+              ? ChorePalColors.darkBackgroundGradient
+              : ChorePalColors.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              _buildTabSelector(),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildParentLoginForm(),
+                    _buildChildLoginForm(),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -93,30 +103,32 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   /// Builds the app header with logo and title
   Widget _buildHeader() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         const SizedBox(height: 40),
-        Icon(
-          Icons.check_circle_outline,
-          size: 70,
-          color: _primaryColor,
+        Image.asset(
+          'assets/images/chorepal-logo-ideas.png',
+          width: 100,
+          height: 100,
+          fit: BoxFit.contain,
         ),
         const SizedBox(height: 10),
         Text(
           'ChorePal',
-          style: TextStyle(
-            fontSize: 36,
-            fontWeight: FontWeight.bold,
-            color: _textColor,
-          ),
+          style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                color: isDarkMode ? Colors.white : const Color(0xFF333333),
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 10),
         Text(
           'Helping families manage chores together',
-          style: TextStyle(
-            fontSize: 16,
-            color: _textColor.withValues(alpha: 0.7),
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color:
+                    isDarkMode ? Colors.grey.shade300 : const Color(0xFF666666),
+              ),
         ),
         const SizedBox(height: 30),
       ],
@@ -125,14 +137,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   /// Builds the tab selector
   Widget _buildTabSelector() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       height: 50,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.grey.shade200,
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.1),
             blurRadius: 5,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -145,11 +159,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         child: TabBar(
           controller: _tabController,
           indicator: BoxDecoration(
-            color: Theme.of(context).primaryColor,
+            color: isDarkMode
+                ? ChorePalColors.darkBlue
+                : Theme.of(context).primaryColor,
             borderRadius: BorderRadius.circular(25),
           ),
           labelColor: Colors.white,
-          unselectedLabelColor: _textColor,
+          unselectedLabelColor:
+              isDarkMode ? Colors.grey.shade300 : const Color(0xFF333333),
           labelStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -169,16 +186,29 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   /// Builds the parent login form
   Widget _buildParentLoginForm() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Card(
-          elevation: 4,
+          elevation: 2,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(24.0),
             child: Form(
               key: _parentFormKey,
               child: Column(
@@ -186,21 +216,22 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 children: [
                   Text(
                     _isRegistering ? 'Create Parent Account' : 'Parent Login',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: _textColor,
-                    ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: isDarkMode
+                              ? Colors.white
+                              : const Color(0xFF333333),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  if (_isRegistering) 
-                    _buildNameField(),
+                  if (_isRegistering) _buildNameField(),
+                  if (_isRegistering) _buildPhoneNumberField(),
                   _buildEmailField(),
                   const SizedBox(height: 16),
                   _buildPasswordField(),
-                  if (_errorMessage != null)
-                    _buildErrorMessage(),
+                  if (_errorMessage != null) _buildErrorMessage(),
                   const SizedBox(height: 24),
                   _buildParentActionButton(),
                   const SizedBox(height: 16),
@@ -214,21 +245,81 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
   }
 
+  /// Builds the phone number field for parent registration
+  Widget _buildPhoneNumberField() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      children: [
+        TextFormField(
+          controller: _phoneNumberController,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            labelText: 'Phone Number (Optional)',
+            hintText: '+18777804236 (E.164 format)',
+            prefixIcon: isDarkMode
+                ? Container(
+                    decoration: const BoxDecoration(
+                      gradient: ChorePalColors.darkBlueGradient,
+                      shape: BoxShape.circle,
+                    ),
+                    margin: const EdgeInsets.all(8),
+                    child:
+                        const Icon(Icons.phone, color: Colors.white, size: 20),
+                  )
+                : const Icon(Icons.phone, color: ChorePalColors.darkBlue),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: ChorePalColors.darkBlue, width: 2),
+            ),
+            filled: true,
+            fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+          ),
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black87,
+          ),
+          validator: (value) {
+            if (value != null && value.isNotEmpty && !value.startsWith('+')) {
+              return 'Phone number must be in E.164 format (e.g., +18777804236)';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
   /// Builds the name field for parent registration
   Widget _buildNameField() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         TextFormField(
           controller: _nameController,
           decoration: InputDecoration(
             labelText: 'Your Name',
-            prefixIcon: Icon(Icons.person, color: _primaryColor),
+            prefixIcon: isDarkMode
+                ? Container(
+                    decoration: const BoxDecoration(
+                      gradient: ChorePalColors.darkBlueGradient,
+                      shape: BoxShape.circle,
+                    ),
+                    margin: const EdgeInsets.all(8),
+                    child:
+                        const Icon(Icons.person, color: Colors.white, size: 20),
+                  )
+                : const Icon(Icons.person, color: ChorePalColors.darkBlue),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: _primaryColor, width: 2),
+              borderSide: const BorderSide(color: ChorePalColors.darkBlue, width: 2),
             ),
           ),
           validator: (value) {
@@ -245,18 +336,38 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   /// Builds the email field
   Widget _buildEmailField() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return TextFormField(
       controller: _emailController,
       decoration: InputDecoration(
         labelText: 'Email',
-        prefixIcon: Icon(Icons.email, color: _primaryColor),
+        prefixIcon: isDarkMode
+            ? Container(
+                decoration: const BoxDecoration(
+                  gradient: ChorePalColors.darkBlueGradient,
+                  shape: BoxShape.circle,
+                ),
+                margin: const EdgeInsets.all(8),
+                child: const Icon(Icons.email, color: Colors.white, size: 20),
+              )
+            : const Icon(Icons.email, color: ChorePalColors.darkBlue),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: _primaryColor, width: 2),
+          borderSide: BorderSide(
+            color:
+                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
+            width: 2,
+          ),
         ),
+        filled: true,
+        fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+      ),
+      style: TextStyle(
+        color: isDarkMode ? Colors.white : Colors.black87,
       ),
       keyboardType: TextInputType.emailAddress,
       validator: (value) {
@@ -273,20 +384,40 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   /// Builds the password field
   Widget _buildPasswordField() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return TextFormField(
       controller: _passwordController,
+      obscureText: true,
       decoration: InputDecoration(
         labelText: 'Password',
-        prefixIcon: Icon(Icons.lock, color: _primaryColor),
+        prefixIcon: isDarkMode
+            ? Container(
+                decoration: const BoxDecoration(
+                  gradient: ChorePalColors.darkBlueGradient,
+                  shape: BoxShape.circle,
+                ),
+                margin: const EdgeInsets.all(8),
+                child: const Icon(Icons.lock, color: Colors.white, size: 20),
+              )
+            : const Icon(Icons.lock, color: ChorePalColors.darkBlue),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: _primaryColor, width: 2),
+          borderSide: BorderSide(
+            color:
+                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
+            width: 2,
+          ),
         ),
+        filled: true,
+        fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       ),
-      obscureText: true,
+      style: TextStyle(
+        color: isDarkMode ? Colors.white : Colors.black87,
+      ),
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter your password';
@@ -327,68 +458,141 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   /// Builds the parent login/register button
   Widget _buildParentActionButton() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       width: double.infinity,
       height: 50,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _primaryColor,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          elevation: 2,
-        ),
-        onPressed: _isLoading ? null : _handleParentSubmit,
-        child: _isLoading
-            ? const SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 3,
-                ),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(_isRegistering ? Icons.person_add : Icons.login),
-                  const SizedBox(width: 8),
-                  Text(
-                    _isRegistering ? 'Create Account' : 'Login',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      child: isDarkMode
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: ChorePalColors.darkBlueGradient,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: ChorePalColors.darkBlue.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-      ),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: _isLoading ? null : _handleParentSubmit,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Login',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward),
+                        ],
+                      ),
+              ),
+            )
+          : ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ChorePalColors.darkBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 2,
+              ),
+              onPressed: _isLoading ? null : _handleParentSubmit,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(_isRegistering ? Icons.person_add : Icons.login),
+                        const SizedBox(width: 8),
+                        Text(
+                          _isRegistering ? 'Create Account' : 'Login',
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+            ),
     );
   }
 
   /// Builds the toggle button to switch between login and register
   Widget _buildToggleAuthModeButton() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return TextButton(
       onPressed: _isLoading ? null : _toggleParentAuthMode,
-      child: Text(
-        _isRegistering
-            ? 'Already have an account? Login'
-            : 'Create a new account',
-        style: TextStyle(color: _accentColor),
+      child: ShaderMask(
+        shaderCallback: (bounds) => isDarkMode
+            ? ChorePalColors.darkBlueGradient.createShader(bounds)
+            : ChorePalColors.primaryGradient.createShader(bounds),
+        child: Text(
+          _isRegistering
+              ? 'Already have an account? Login'
+              : 'Create a new account',
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : ChorePalColors.lightBlue,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
 
   /// Builds the child login form
   Widget _buildChildLoginForm() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Card(
-          elevation: 4,
+          elevation: 2,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDarkMode ? const Color(0xFF2D2D2D) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(24.0),
             child: Form(
               key: _childFormKey,
               child: Column(
@@ -396,14 +600,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 children: [
                   Text(
                     'Child Login',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: _textColor,
-                    ),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: isDarkMode
+                              ? Colors.white
+                              : const Color(0xFF333333),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                   _buildChildNameField(),
                   const SizedBox(height: 16),
                   _buildFamilyCodeField(),
@@ -449,30 +655,42 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   /// Builds the child name field
   Widget _buildChildNameField() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return TextFormField(
       controller: _childNameController,
       decoration: InputDecoration(
         labelText: 'Your Name',
         labelStyle: TextStyle(
-          color: _primaryColor,
+          color: isDarkMode ? Colors.grey.shade300 : ChorePalColors.darkBlue,
           fontWeight: FontWeight.w500,
         ),
-        prefixIcon: Icon(Icons.person, color: _primaryColor),
+        prefixIcon: isDarkMode
+            ? Container(
+                decoration: const BoxDecoration(
+                  gradient: ChorePalColors.darkBlueGradient,
+                  shape: BoxShape.circle,
+                ),
+                margin: const EdgeInsets.all(8),
+                child: const Icon(Icons.person, color: Colors.white, size: 20),
+              )
+            : const Icon(Icons.person, color: ChorePalColors.darkBlue),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: _primaryColor, width: 2),
+          borderSide: const BorderSide(color: ChorePalColors.darkBlue, width: 2),
         ),
         hintText: 'Enter your name',
         filled: true,
-        fillColor: Colors.white,
+        fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       ),
-      textCapitalization: TextCapitalization.words,
-      style: const TextStyle(
+      style: TextStyle(
+        color: isDarkMode ? Colors.white : Colors.black87,
         fontSize: 16,
       ),
+      textCapitalization: TextCapitalization.words,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter your name';
@@ -484,6 +702,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   /// Builds the family code field
   Widget _buildFamilyCodeField() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -491,30 +711,43 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
           controller: _familyCodeController,
           decoration: InputDecoration(
             labelText: 'Family Code',
-            labelStyle: TextStyle(
-              color: _primaryColor,
+            labelStyle: const TextStyle(
+              color: ChorePalColors.darkBlue,
               fontWeight: FontWeight.w500,
             ),
-            prefixIcon: Icon(Icons.numbers, color: _primaryColor),
+            prefixIcon: isDarkMode
+                ? Container(
+                    decoration: const BoxDecoration(
+                      gradient: ChorePalColors.darkBlueGradient,
+                      shape: BoxShape.circle,
+                    ),
+                    margin: const EdgeInsets.all(8),
+                    child: const Icon(Icons.numbers,
+                        color: Colors.white, size: 20),
+                  )
+                : const Icon(Icons.numbers, color: ChorePalColors.darkBlue),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: _primaryColor, width: 2),
+              borderSide: const BorderSide(color: ChorePalColors.darkBlue, width: 2),
             ),
             hintText: 'Enter 6-digit code',
             helperText: 'Ask your parent for the 6-digit family code',
             counterText: '',
+            filled: true,
+            fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
           ),
-          keyboardType: TextInputType.number,
-          maxLength: 6,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black87,
             fontSize: 20,
             letterSpacing: 8,
             fontWeight: FontWeight.bold,
           ),
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          textAlign: TextAlign.center,
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Please enter your family code';
@@ -531,40 +764,90 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   /// Builds the child login button
   Widget _buildChildLoginButton() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       width: double.infinity,
       height: 50,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _primaryColor,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          elevation: 2,
-        ),
-        onPressed: _isLoading ? null : _handleChildLogin,
-        child: _isLoading
-            ? const SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 3,
-                ),
-              )
-            : const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.login),
-                  SizedBox(width: 8),
-                  Text(
-                    'Join Family',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      child: isDarkMode
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: ChorePalColors.darkBlueGradient,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: ChorePalColors.darkBlue.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-      ),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: _isLoading ? null : _handleChildLogin,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Login',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward),
+                        ],
+                      ),
+              ),
+            )
+          : ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ChorePalColors.darkBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 2,
+              ),
+              onPressed: _isLoading ? null : _handleChildLogin,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                  : const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.login),
+                        SizedBox(width: 8),
+                        Text(
+                          'Join Family',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+            ),
     );
   }
 
@@ -594,7 +877,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              'Error: ${e.toString().replaceAll('Exception: ', '')}';
           _isLoading = false;
         });
       }
@@ -614,21 +898,24 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
-    
+
     // Create a new family
     final familyRef = await _firestoreService.createFamily(
       credential.user!.uid,
       'Family ${_nameController.text}',
     );
-    
+
     // Create user profile
     await _firestoreService.createParentProfile(
       credential.user!.uid,
       _nameController.text,
       _emailController.text,
       familyId: familyRef.id,
+      phoneNumber: _phoneNumberController.text.trim().isNotEmpty
+          ? _phoneNumberController.text.trim()
+          : null,
     );
-    
+
     if (mounted) {
       await _initializeStateAndNavigateToParentDashboard(familyRef.id);
     }
@@ -641,34 +928,43 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
-    
+
     // Get user data
-    final userDoc = await _firestoreService.users.doc(credential.user!.uid).get();
+    final userDoc =
+        await _firestoreService.users.doc(credential.user!.uid).get();
     if (!userDoc.exists) {
       throw Exception('User profile not found');
     }
-    
+
     final userData = userDoc.data() as Map<String, dynamic>;
     if (userData['isParent'] != true) {
       throw Exception('This account is not registered as a parent');
     }
-    
+
     if (mounted) {
       await _initializeStateAndNavigateToParentDashboard(userData['familyId']);
     }
   }
 
   /// Initializes state providers and navigates to parent dashboard
-  Future<void> _initializeStateAndNavigateToParentDashboard(String familyId) async {
+  Future<void> _initializeStateAndNavigateToParentDashboard(
+      String familyId) async {
     // Initialize data for state providers
     final choreState = Provider.of<ChoreState>(context, listen: false);
     choreState.setFamilyId(familyId);
     await choreState.loadChores();
-    
+
     final rewardState = Provider.of<RewardState>(context, listen: false);
     rewardState.setFamilyId(familyId);
     await rewardState.loadRewards();
-    
+
+    // Set user context for notifications
+    final userState = Provider.of<UserState>(context, listen: false);
+    await userState.loadCurrentUser();
+    if (userState.currentUser != null) {
+      NotificationHelper.setCurrentUser(userState.currentUser);
+    }
+
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const EnhancedParentDashboard()),
@@ -686,43 +982,84 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
         final childName = _childNameController.text.trim();
         final familyCode = _familyCodeController.text.trim();
-        
-        // Use the UserState provider to find or create the child
-        final userState = Provider.of<UserState>(context, listen: false);
-        
-        try {
-          final child = await userState.findOrCreateChild(childName, familyCode);
-          
-          if (child == null) {
-            throw Exception('Failed to join family. Please try again');
+
+        // Clean and validate the family code
+        final cleanedCode = familyCode.trim().replaceAll(' ', '');
+        if (cleanedCode.length != 6 ||
+            !RegExp(r'^\d{6}$').hasMatch(cleanedCode)) {
+          throw Exception('Invalid family code format. Please enter 6 digits');
+        }
+
+        // Find family by code
+        final familySnapshot =
+            await _firestoreService.findFamilyByCode(cleanedCode);
+        if (familySnapshot.docs.isEmpty) {
+          throw Exception('Invalid family code. Please check with your parent');
+        }
+
+        final familyDoc = familySnapshot.docs.first;
+        final familyId = familyDoc.id;
+
+        // First, check if a child with this name already exists in the family
+        final existingChild = await _firestoreService.findChildByNameInFamily(
+            childName, familyId);
+
+        String childId;
+        if (existingChild != null) {
+          // Child already exists, use their existing ID
+          childId = existingChild.id;
+          print('Found existing child: $childName with ID: $childId');
+        } else {
+          // Create a new child
+          print('Creating new child: $childName');
+
+          // Create a Firebase Auth account for the child
+          // Use a unique email format for children with timestamp to ensure uniqueness
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final childEmail =
+              '${familyId}_${childName}_$timestamp@chorepal.child';
+          final childPassword = 'child_${familyId}_${childName}_$timestamp';
+
+          UserCredential credential;
+          try {
+            // Try to sign in with existing credentials first
+            credential = await _authService.signInWithEmailAndPassword(
+                childEmail, childPassword);
+          } catch (e) {
+            // If sign in fails, create a new account
+            credential = await _authService.registerWithEmailAndPassword(
+                childEmail, childPassword);
           }
-          
-          // Set family ID for the state providers
-          final familyId = child.familyId;
-          
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Welcome, ${child.name}! You have ${child.points} points.'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            
-            await _initializeStateAndNavigateToChildDashboard(familyId, child.id);
-          }
-        } catch (e) {
-          // Handle specific errors for family code and display appropriate messages
-          String errorMessage = e.toString().replaceAll('Exception: ', '');
-          setState(() {
-            _errorMessage = errorMessage;
-            _isLoading = false;
-          });
+
+          // Use the Firebase Auth UID as the child ID
+          childId = credential.user!.uid;
+
+          // Create the child profile in Firestore
+          await _firestoreService.createChildProfile(
+              childId, childName, familyId);
+          await _firestoreService.addChildToFamily(familyId, childId);
+        }
+
+        if (mounted) {
+          final message = existingChild != null
+              ? 'Welcome back, $childName!'
+              : 'Welcome, $childName! You have joined your family.';
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          await _initializeStateAndNavigateToChildDashboard(familyId, childId);
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error: ${e.toString().replaceAll('Exception: ', '')}';
+          _errorMessage =
+              'Error: ${e.toString().replaceAll('Exception: ', '')}';
           _isLoading = false;
         });
       }
@@ -736,16 +1073,24 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }
 
   /// Initializes state providers and navigates to child dashboard
-  Future<void> _initializeStateAndNavigateToChildDashboard(String familyId, String childId) async {
+  Future<void> _initializeStateAndNavigateToChildDashboard(
+      String familyId, String childId) async {
     // Initialize data for state providers
     final choreState = Provider.of<ChoreState>(context, listen: false);
     choreState.setFamilyId(familyId);
     await choreState.loadChores();
-    
+
     final rewardState = Provider.of<RewardState>(context, listen: false);
     rewardState.setFamilyId(familyId);
     await rewardState.loadRewards();
-    
+
+    // Set user context for notifications
+    final userState = Provider.of<UserState>(context, listen: false);
+    await userState.loadCurrentUser();
+    if (userState.currentUser != null) {
+      NotificationHelper.setCurrentUser(userState.currentUser);
+    }
+
     // Navigate to child dashboard
     if (!mounted) return;
     Navigator.of(context).pushReplacement(

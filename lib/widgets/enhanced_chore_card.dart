@@ -168,7 +168,7 @@ class _EnhancedChoreCardState extends State<EnhancedChoreCard>
                   if (widget.chore.priority == 'high')
                     Container(
                       margin: const EdgeInsets.only(right: 8),
-                      child: Icon(
+                      child: const Icon(
                         Icons.priority_high,
                         color: Colors.red,
                         size: 20,
@@ -231,16 +231,16 @@ class _EnhancedChoreCardState extends State<EnhancedChoreCard>
           ),
         ],
       ),
-      child: Row(
+      child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.flash_on,
             size: 12,
             color: Colors.white,
           ),
-          const SizedBox(width: 4),
-          const Text(
+          SizedBox(width: 4),
+          Text(
             'High Priority',
             style: TextStyle(
               color: Colors.white,

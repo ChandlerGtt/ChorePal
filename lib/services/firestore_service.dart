@@ -20,7 +20,8 @@ class FirestoreService {
   // ----------------------
 
   /// Creates a new parent user profile.
-  Future<void> createParentProfile(String uid, String name, String email, {String? familyId}) async {
+  Future<void> createParentProfile(String uid, String name, String email,
+      {String? familyId, String? phoneNumber}) async {
     try {
       await users.doc(uid).set({
         'name': name,
@@ -28,6 +29,10 @@ class FirestoreService {
         'isParent': true,
         'familyId': familyId ?? '',
         'points': 0,
+        'pushNotificationsEnabled': true,
+        'emailNotificationsEnabled': true,
+        'smsNotificationsEnabled': false,
+        if (phoneNumber != null && phoneNumber.isNotEmpty) 'phoneNumber': phoneNumber,
         'createdAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
@@ -44,6 +49,9 @@ class FirestoreService {
       'points': 0,
       'completedChores': [],
       'redeemedRewards': [],
+      'pushNotificationsEnabled': true,
+      'emailNotificationsEnabled': true,
+      'smsNotificationsEnabled': false,
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -55,13 +63,14 @@ class FirestoreService {
       if (!doc.exists) {
         throw Exception('User profile not found. Please try logging in again.');
       }
-      
+
       return User.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
     } catch (e) {
       if (e.toString().contains('User profile not found')) {
         rethrow;
       }
-      throw Exception('Failed to load user profile. Please check your connection.');
+      throw Exception(
+          'Failed to load user profile. Please check your connection.');
     }
   }
 
@@ -72,12 +81,41 @@ class FirestoreService {
           .where('familyId', isEqualTo: familyId)
           .where('isParent', isEqualTo: false)
           .get();
-      
+
       return snapshot.docs.map((doc) {
         return Child.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
       }).toList();
     } catch (e) {
       throw Exception('Failed to load children. Please check your connection.');
+    }
+  }
+
+  /// Finds a child by name within a specific family.
+  Future<Child?> findChildByNameInFamily(
+      String childName, String familyId) async {
+    try {
+      // Normalize the input name to lowercase for case-insensitive comparison
+      final normalizedInputName = childName.trim().toLowerCase();
+      
+      // Query all children in the family (without name filter since Firestore is case-sensitive)
+      QuerySnapshot snapshot = await users
+          .where('familyId', isEqualTo: familyId)
+          .where('isParent', isEqualTo: false)
+          .get();
+
+      // Find the child with matching name (case-insensitive)
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final storedName = data['name']?.toString().trim().toLowerCase() ?? '';
+        if (storedName == normalizedInputName) {
+          return Child.fromFirestore(doc.id, data);
+        }
+      }
+
+      return null;
+    } catch (e) {
+      print('Error finding child by name: $e');
+      return null;
     }
   }
 
@@ -87,7 +125,7 @@ class FirestoreService {
     if (!childDoc.exists) {
       throw Exception('Child not found');
     }
-    
+
     int currentPoints = childDoc.get('points') ?? 0;
     return users.doc(childId).update({
       'points': currentPoints + points,
@@ -124,17 +162,17 @@ class FirestoreService {
     // Generate a 6-digit numeric code
     final random = Random();
     String code = '';
-    
+
     // Create a 6-digit code with leading zeros if necessary
     for (int i = 0; i < 6; i++) {
       code += random.nextInt(10).toString();
     }
-    
+
     // Ensure the code doesn't start with 0
     if (code.startsWith('0')) {
-      code = '1' + code.substring(1);
+      code = '1${code.substring(1)}';
     }
-    
+
     return code;
   }
 
@@ -148,6 +186,24 @@ class FirestoreService {
     return families.doc(familyId).update({
       'childrenIds': FieldValue.arrayUnion([childId]),
     });
+  }
+
+  /// Removes a child from a family.
+  Future<void> removeChildFromFamily(String familyId, String childId) async {
+    try {
+      // Remove child from family's children list
+      await families.doc(familyId).update({
+        'childrenIds': FieldValue.arrayRemove([childId]),
+      });
+
+      // Delete the child's user document
+      await users.doc(childId).delete();
+
+      print('Successfully removed child $childId from family $familyId');
+    } catch (e) {
+      print('Error removing child from family: $e');
+      throw Exception('Failed to remove child from family. Please try again.');
+    }
   }
 
   // ----------------------
@@ -165,9 +221,7 @@ class FirestoreService {
 
   /// Gets chores for a family.
   Future<QuerySnapshot> getChoresForFamily(String familyId) {
-    return chores
-        .where('familyId', isEqualTo: familyId)
-        .get();
+    return chores.where('familyId', isEqualTo: familyId).get();
   }
 
   /// Gets chores assigned to a specific child.
@@ -176,7 +230,7 @@ class FirestoreService {
         .where('familyId', isEqualTo: familyId)
         .where('assignedTo', arrayContains: childId)
         .get();
-    
+
     return snapshot.docs.map((doc) {
       return Chore.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
     }).toList();
@@ -188,7 +242,7 @@ class FirestoreService {
         .where('familyId', isEqualTo: familyId)
         .where('isCompleted', isEqualTo: false)
         .get();
-    
+
     return snapshot.docs.map((doc) {
       return Chore.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
     }).toList();
@@ -200,7 +254,7 @@ class FirestoreService {
         .where('familyId', isEqualTo: familyId)
         .where('isCompleted', isEqualTo: true)
         .get();
-    
+
     return snapshot.docs.map((doc) {
       return Chore.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
     }).toList();
@@ -211,29 +265,30 @@ class FirestoreService {
     return _firestore.runTransaction((transaction) async {
       DocumentSnapshot choreDoc = await transaction.get(chores.doc(choreId));
       DocumentSnapshot childDoc = await transaction.get(users.doc(childId));
-      
+
       if (!choreDoc.exists || !childDoc.exists) {
         throw Exception('Chore or child not found');
       }
-      
+
       Map<String, dynamic> choreData = choreDoc.data() as Map<String, dynamic>;
       if (choreData['isCompleted'] == true) {
         throw Exception('Chore already completed');
       }
-      
+
       // Get the child's current data
-      Child child = Child.fromFirestore(childId, childDoc.data() as Map<String, dynamic>);
-      int pointValue = choreData['pointValue'] is int 
-          ? choreData['pointValue'] 
+      Child child =
+          Child.fromFirestore(childId, childDoc.data() as Map<String, dynamic>);
+      int pointValue = choreData['pointValue'] is int
+          ? choreData['pointValue']
           : int.tryParse(choreData['pointValue']?.toString() ?? '0') ?? 0;
-      
+
       // Update chore as completed
       transaction.update(chores.doc(choreId), {
         'isCompleted': true,
         'completedBy': childId,
         'completedAt': FieldValue.serverTimestamp()
       });
-      
+
       // Update child's points and completed chores
       transaction.update(users.doc(childId), {
         'points': child.points + pointValue,
@@ -256,28 +311,29 @@ class FirestoreService {
     return _firestore.runTransaction((transaction) async {
       DocumentSnapshot choreDoc = await transaction.get(chores.doc(choreId));
       DocumentSnapshot childDoc = await transaction.get(users.doc(childId));
-      
+
       if (!choreDoc.exists || !childDoc.exists) {
         throw Exception('Chore or child not found');
       }
-      
+
       Map<String, dynamic> choreData = choreDoc.data() as Map<String, dynamic>;
       if (choreData['isCompleted'] == true) {
         throw Exception('Chore already completed');
       }
-      
+
       // Get the child's current data
-      Child child = Child.fromFirestore(childId, childDoc.data() as Map<String, dynamic>);
-      int pointValue = choreData['pointValue'] is int 
-          ? choreData['pointValue'] 
+      Child child =
+          Child.fromFirestore(childId, childDoc.data() as Map<String, dynamic>);
+      int pointValue = choreData['pointValue'] is int
+          ? choreData['pointValue']
           : int.tryParse(choreData['pointValue']?.toString() ?? '0') ?? 0;
-      
+
       // Update chore as completed
       transaction.update(chores.doc(choreId), {
         'isCompleted': true,
         'isPendingApproval': false,
       });
-      
+
       // Update child's points and completed chores
       transaction.update(users.doc(childId), {
         'points': child.points + pointValue,
@@ -301,9 +357,7 @@ class FirestoreService {
 
   /// Gets rewards for a family.
   Future<QuerySnapshot> getRewardsForFamily(String familyId) {
-    return rewards
-        .where('familyId', isEqualTo: familyId)
-        .get();
+    return rewards.where('familyId', isEqualTo: familyId).get();
   }
 
   /// Redeems a reward.
@@ -312,31 +366,33 @@ class FirestoreService {
     return _firestore.runTransaction((transaction) async {
       DocumentSnapshot rewardDoc = await transaction.get(rewards.doc(rewardId));
       DocumentSnapshot childDoc = await transaction.get(users.doc(childId));
-      
+
       if (!rewardDoc.exists || !childDoc.exists) {
         throw Exception('Reward or child not found');
       }
-      
-      Map<String, dynamic> rewardData = rewardDoc.data() as Map<String, dynamic>;
+
+      Map<String, dynamic> rewardData =
+          rewardDoc.data() as Map<String, dynamic>;
       if (rewardData['isRedeemed'] == true) {
         throw Exception('Reward already redeemed');
       }
-      
-      Child child = Child.fromFirestore(childId, childDoc.data() as Map<String, dynamic>);
-      int pointsRequired = rewardData['pointsRequired'] is int 
-          ? rewardData['pointsRequired'] 
+
+      Child child =
+          Child.fromFirestore(childId, childDoc.data() as Map<String, dynamic>);
+      int pointsRequired = rewardData['pointsRequired'] is int
+          ? rewardData['pointsRequired']
           : int.tryParse(rewardData['pointsRequired']?.toString() ?? '0') ?? 0;
-      
+
       if (child.points < pointsRequired) {
         throw Exception('Not enough points');
       }
-      
+
       // Update user points
       transaction.update(users.doc(childId), {
         'points': child.points - pointsRequired,
         'redeemedRewards': FieldValue.arrayUnion([rewardId])
       });
-      
+
       // Mark reward as redeemed
       transaction.update(rewards.doc(rewardId), {
         'isRedeemed': true,
@@ -352,11 +408,11 @@ class FirestoreService {
         .where('familyId', isEqualTo: familyId)
         .where('isRedeemed', isEqualTo: false)
         .get();
-    
+
     List<Reward> rewardsList = snapshot.docs.map((doc) {
       return Reward.fromFirestore(doc.id, doc.data() as Map<String, dynamic>);
     }).toList();
-    
+
     Map<String, List<Reward>> rewardsByTier = {};
     for (var reward in rewardsList) {
       if (!rewardsByTier.containsKey(reward.tier)) {
@@ -364,7 +420,56 @@ class FirestoreService {
       }
       rewardsByTier[reward.tier]!.add(reward);
     }
-    
+
     return rewardsByTier;
+  }
+
+  // ----------------------
+  // Notification Preferences Methods
+  // ----------------------
+
+  /// Updates notification preferences for a user
+  /// Validates that phone number is provided when SMS notifications are enabled
+  Future<void> updateNotificationPreferences(
+    String userId, {
+    bool? pushNotificationsEnabled,
+    bool? emailNotificationsEnabled,
+    bool? smsNotificationsEnabled,
+    String? phoneNumber,
+  }) async {
+    try {
+      Map<String, dynamic> updates = {};
+
+      if (pushNotificationsEnabled != null) {
+        updates['pushNotificationsEnabled'] = pushNotificationsEnabled;
+      }
+      if (emailNotificationsEnabled != null) {
+        updates['emailNotificationsEnabled'] = emailNotificationsEnabled;
+      }
+      if (smsNotificationsEnabled != null) {
+        updates['smsNotificationsEnabled'] = smsNotificationsEnabled;
+        
+        // Validate phone number when SMS is enabled
+        if (smsNotificationsEnabled) {
+          if (phoneNumber == null || phoneNumber.trim().isEmpty) {
+            throw Exception('Phone number is required when SMS notifications are enabled');
+          }
+          updates['phoneNumber'] = phoneNumber.trim();
+        }
+      }
+      
+      if (phoneNumber != null) {
+        updates['phoneNumber'] = phoneNumber.trim();
+      }
+
+      if (updates.isNotEmpty) {
+        await users.doc(userId).update(updates);
+      }
+    } catch (e) {
+      if (e.toString().contains('Phone number is required')) {
+        rethrow;
+      }
+      throw Exception('Failed to update notification preferences. Please try again.');
+    }
   }
 }

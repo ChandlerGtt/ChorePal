@@ -7,25 +7,31 @@ import '../../models/chore_state.dart';
 import '../../models/reward_state.dart';
 import '../../models/user_state.dart';
 import '../../models/user.dart';
-import '../../widgets/enhanced_chore_card.dart';
 import '../../widgets/reward_card.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../login_screen.dart';
-import '../../models/reward.dart';
 import 'add_reward_screen.dart';
 import 'assign_chore_screen.dart';
 import '../reward_history_screen.dart';
 import '../../models/milestone.dart';
 import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
+import '../settings_screen.dart';
 import '../../widgets/error_widget.dart';
+import '../../widgets/professional_empty_state.dart';
+import '../../widgets/modern_chore_card.dart';
+import '../../widgets/fun_stat_item.dart';
+import '../../utils/chorepal_colors.dart';
+import '../../services/email_service.dart';
+import '../../services/sms_service.dart';
 
 class EnhancedParentDashboard extends StatefulWidget {
   const EnhancedParentDashboard({super.key});
 
   @override
-  State<EnhancedParentDashboard> createState() => _EnhancedParentDashboardState();
+  State<EnhancedParentDashboard> createState() =>
+      _EnhancedParentDashboardState();
 }
 
 class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
@@ -60,11 +66,12 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
       final userState = Provider.of<UserState>(context, listen: false);
       await userState.loadCurrentUser();
       await userState.loadFamilyData();
-           } catch (e) {
-         if (mounted) {
-           AppSnackBar.showError(context, 'Failed to load family data. Please try again.');
-         }
-       }
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.showError(
+            context, 'Failed to load family data. Please try again.');
+      }
+    }
   }
 
   Future<void> _loadFamilyCode() async {
@@ -79,7 +86,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
         final familyId = userData['familyId'];
 
         if (familyId != null) {
-          final familyDoc = await _firestoreService.families.doc(familyId).get();
+          final familyDoc =
+              await _firestoreService.families.doc(familyId).get();
           if (!mounted) return;
 
           final familyData = familyDoc.data() as Map<String, dynamic>;
@@ -122,31 +130,57 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     return Consumer<UserState>(
       builder: (context, userState, child) {
         return Scaffold(
+          extendBodyBehindAppBar: false,
           appBar: _buildAppBar(),
-          body: TabBarView(
-            controller: _tabController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _buildChoresTab(),
-              _buildRewardsTab(),
-              _buildChildrenTab(),
-              _buildLeaderboardTab(),
-              _buildStatisticsTab(),
-            ],
+          body: Builder(
+            builder: (context) {
+              final isDarkMode =
+                  Theme.of(context).brightness == Brightness.dark;
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: isDarkMode
+                      ? ChorePalColors.darkBackgroundGradient
+                      : ChorePalColors.backgroundGradient,
+                ),
+                child: TabBarView(
+                  controller: _tabController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildChoresTab(),
+                    _buildRewardsTab(),
+                    _buildChildrenTab(),
+                    _buildLeaderboardTab(),
+                    _buildStatisticsTab(),
+                  ],
+                ),
+              );
+            },
           ),
+          bottomNavigationBar: _buildBottomNavBar(),
           floatingActionButton: _buildFloatingActionButton(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         );
       },
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return AppBar(
-      title: const Text('Parent Dashboard'),
+      elevation: 0,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: isDarkMode
+              ? ChorePalColors.darkBlueGradient
+              : ChorePalColors.primaryGradient,
+        ),
+      ),
+      title: const Text('ChorePal'),
       actions: [
         PopupMenuButton<String>(
-          tooltip: 'History',
-          icon: const Icon(Icons.history),
+          tooltip: 'Menu',
+          icon: const Icon(Icons.more_vert),
           onSelected: (value) {
             if (value == 'chores') {
               Navigator.of(context).push(
@@ -160,10 +194,16 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                   builder: (context) => const RewardHistoryScreen(),
                 ),
               );
+            } else if (value == 'settings') {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
+              );
             }
           },
-          itemBuilder: (context) => const [
-            PopupMenuItem(
+          itemBuilder: (context) => [
+            const PopupMenuItem(
               value: 'chores',
               child: Row(
                 children: [
@@ -173,7 +213,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                 ],
               ),
             ),
-            PopupMenuItem(
+            const PopupMenuItem(
               value: 'rewards',
               child: Row(
                 children: [
@@ -183,60 +223,167 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                 ],
               ),
             ),
+            const PopupMenuItem(
+              value: 'settings',
+              child: Row(
+                children: [
+                  Icon(Icons.settings, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text('Settings'),
+                ],
+              ),
+            ),
           ],
         ),
         IconButton(
+          icon: const Icon(Icons.email),
+          tooltip: 'Test Email',
+          onPressed: _handleTestEmail,
+        ),
+        IconButton(
+          icon: const Icon(Icons.sms),
+          tooltip: 'Test SMS',
+          onPressed: _handleTestSMS,
+        ),
+        IconButton(
+          icon: const Icon(Icons.settings),
+          tooltip: 'Settings',
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const SettingsScreen(),
+              ),
+            );
+          },
+        ),
+        IconButton(
           icon: const Icon(Icons.logout),
+          tooltip: 'Logout',
           onPressed: _handleLogout,
         ),
       ],
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: Material(
-          color: Theme.of(context).primaryColor,
-          child: TabBar(
-            controller: _tabController,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white.withValues(alpha: 0.6),
-            indicatorColor: Colors.white,
-            indicatorWeight: 3,
-            isScrollable: true,
-            labelStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-            unselectedLabelStyle: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.normal,
-              color: Colors.white,
-            ),
-            tabs: const [
-              Tab(
-                icon: Icon(Icons.checklist),
-                text: 'Chores',
-              ),
-              Tab(
-                icon: Icon(Icons.card_giftcard),
-                text: 'Rewards',
-              ),
-              Tab(
-                icon: Icon(Icons.people),
-                text: 'Children',
-              ),
-              Tab(
-                icon: Icon(Icons.emoji_events),
-                text: 'Leaderboard',
-              ),
-              Tab(
-                icon: Icon(Icons.bar_chart),
-                text: 'Statistics',
-              ),
-            ],
-          ),
-        ),
-      ),
     );
+  }
+
+  Future<void> _handleTestEmail() async {
+    try {
+      final userState = Provider.of<UserState>(context, listen: false);
+      final user = userState.currentUser;
+
+      if (user == null || user is! Parent) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User not found or not a parent'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sending test email...'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 1),
+        ),
+      );
+
+      final success = await EmailService.sendTestEmail(user.email);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? 'Test email sent to ${user.email}'
+                  : 'Failed to send test email',
+            ),
+            backgroundColor: success ? Colors.green : Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Email test error: $e');
+      String errorMessage = 'Failed to send test email: ${e.toString()}';
+
+      // Extract more details if it's a Firebase Functions error
+      if (e.toString().contains('UNAUTHENTICATED')) {
+        errorMessage =
+            'Authentication required. Please ensure you are logged in.';
+      } else if (e.toString().contains('NOT_FOUND')) {
+        errorMessage =
+            'Cloud Function not found. Please deploy the email function.';
+      } else if (e.toString().contains('SendGrid') ||
+          e.toString().contains('SENDGRID')) {
+        errorMessage = 'Email service error. Check SendGrid configuration.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleTestSMS() async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sending test SMS...'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 1),
+        ),
+      );
+
+      const testNumber = '+18777804236';
+      final success = await SMSService.sendTestSMS();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? 'Test SMS sent to $testNumber'
+                  : 'Failed to send test SMS',
+            ),
+            backgroundColor: success ? Colors.green : Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('SMS test error: $e');
+      String errorMessage = 'Failed to send test SMS: ${e.toString()}';
+
+      // Extract more details if it's a Firebase Functions error
+      if (e.toString().contains('UNAUTHENTICATED')) {
+        errorMessage =
+            'Authentication required. Please ensure you are logged in.';
+      } else if (e.toString().contains('NOT_FOUND')) {
+        errorMessage =
+            'Cloud Function not found. Please deploy the SMS function.';
+      } else if (e.toString().contains('Twilio') ||
+          e.toString().contains('TWILIO')) {
+        errorMessage =
+            'SMS service error. Check Twilio credentials configuration.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _handleLogout() async {
@@ -250,26 +397,122 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     }
   }
 
+  /// Builds modern bottom navigation bar
+  Widget _buildBottomNavBar() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDarkMode
+            ? ChorePalColors.darkBlueGradient
+            : ChorePalColors.primaryGradient,
+        boxShadow: [
+          BoxShadow(
+            color:
+                (isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.skyBlue)
+                    .withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Container(
+          height: 70,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(Icons.checklist, 'Chores', 0),
+              _buildNavItem(Icons.card_giftcard, 'Rewards', 1),
+              _buildNavItem(Icons.people, 'Children', 2),
+              _buildNavItem(Icons.emoji_events, 'Leaderboard', 3),
+              _buildNavItem(Icons.bar_chart, 'Stats', 4),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, int index) {
+    final isSelected = _tabController.index == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          _tabController.animateTo(index);
+          setState(() {});
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected
+                ? Colors.white.withOpacity(0.25)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected
+                ? Border.all(
+                    color: Colors.white.withOpacity(0.5),
+                    width: 1.5,
+                  )
+                : null,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: Colors.white,
+                size: isSelected ? 26 : 22,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isSelected ? 11 : 10,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildFloatingActionButton() {
     if (_tabController.index > 1) {
       return Container();
     }
-    
-    return FloatingActionButton(
-      onPressed: () {
-        if (_tabController.index == 0) {
-          _showAddChoreDialog(context);
-        }
-        if (_tabController.index == 1) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddRewardScreen(),
-            ),
-          );
-        }
-      },
-      child: const Icon(Icons.add),
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 75),
+      child: FloatingActionButton.extended(
+        onPressed: () {
+          if (_tabController.index == 0) {
+            _showAddChoreDialog(context);
+          }
+          if (_tabController.index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AddRewardScreen(),
+              ),
+            );
+          }
+        },
+        icon: const Icon(Icons.add, size: 24),
+        label: Text(
+          _tabController.index == 0 ? 'Add Chore' : 'Add Reward',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        tooltip:
+            _tabController.index == 0 ? 'Add a new chore' : 'Add a new reward',
+      ),
     );
   }
 
@@ -281,30 +524,23 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
           child: Consumer<ChoreState>(
             builder: (context, choreState, child) {
               if (choreState.isLoading) {
-                return const Center(child: CircularProgressIndicator());
+                return const ProfessionalLoadingIndicator(
+                  message: 'Loading chores...',
+                );
               }
 
               if (choreState.chores.isEmpty) {
                 return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.assignment_outlined,
-                        size: 64,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'No chores created yet',
-                        style: TextStyle(fontSize: 18, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Click the + button to add your first chore!',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: ProfessionalEmptyState(
+                      icon: Icons.assignment_outlined,
+                      title: 'No Chores Yet',
+                      subtitle:
+                          'Start organizing your family\'s tasks by creating your first chore.',
+                      actionLabel: 'Create First Chore',
+                      onAction: () => _showAddChoreDialog(context),
+                    ),
                   ),
                 );
               }
@@ -318,86 +554,108 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
   }
 
   Widget _buildFamilyCodeHeader() {
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.green.shade400, Colors.green.shade600],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return Container(
+      margin: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        gradient: ChorePalColors.primaryGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: ChorePalColors.lightBlue.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.family_restroom, color: Colors.white, size: 24),
-                SizedBox(width: 8),
-                Text(
-                  "Family Code",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      familyCode,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 4,
-                        color: Colors.green.shade700,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.copy, color: Colors.white),
-                    tooltip: "Copy code",
-                    onPressed: _copyFamilyCodeToClipboard,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "Share this code with your children so they can join your family group",
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.white70,
-                fontStyle: FontStyle.italic,
+                child: const Icon(Icons.family_restroom,
+                    color: Colors.white, size: 24),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Family Code",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      "Share with children to join",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    familyCode,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 6,
+                      color: ChorePalColors.lightBlue,
+                      fontFamily: 'monospace',
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.copy, color: Colors.white, size: 24),
+                  tooltip: "Copy code",
+                  onPressed: _copyFamilyCodeToClipboard,
+                  padding: const EdgeInsets.all(12),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -408,30 +666,69 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     final allChores = [...pendingApprovalChores, ...otherChores];
 
     return ListView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       itemCount: allChores.length + (pendingApprovalChores.isNotEmpty ? 1 : 0),
       itemBuilder: (context, index) {
         if (pendingApprovalChores.isNotEmpty && index == 0) {
           return Container(
-            margin: const EdgeInsets.symmetric(vertical: 8),
-            padding: const EdgeInsets.all(12),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.orange.shade100, Colors.orange.shade200],
+                colors: [
+                  ChorePalColors.sunshineOrange.withOpacity(0.2),
+                  ChorePalColors.strawberryPink.withOpacity(0.2),
+                ],
               ),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange.shade300),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: ChorePalColors.sunshineOrange.withOpacity(0.5),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: ChorePalColors.sunshineOrange.withOpacity(0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Row(
               children: [
-                Icon(Icons.pending_actions, color: Colors.orange.shade700),
-                const SizedBox(width: 8),
-                Text(
-                  'Awaiting Your Approval (${pendingApprovalChores.length})',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange.shade700,
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: ChorePalColors.sunshineOrange.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.pending_actions,
+                    color: ChorePalColors.sunshineOrange,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Awaiting Your Approval',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: ChorePalColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${pendingApprovalChores.length} chore${pendingApprovalChores.length > 1 ? 's' : ''} need approval',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: ChorePalColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -442,7 +739,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
         final choreIndex = pendingApprovalChores.isNotEmpty ? index - 1 : index;
         final chore = allChores[choreIndex];
 
-        return EnhancedChoreCard(
+        return ModernChoreCard(
           chore: chore,
           onApprove: _handleApproveChore,
           onAssign: (chore) {
@@ -462,29 +759,30 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     return Consumer<RewardState>(
       builder: (context, rewardState, child) {
         if (rewardState.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const ProfessionalLoadingIndicator(
+            message: 'Loading rewards...',
+          );
         }
         if (rewardState.rewards.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.card_giftcard_outlined,
-                  size: 64,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'No rewards created yet',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Click the + button to add your first reward!',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: ProfessionalEmptyState(
+                icon: Icons.card_giftcard_outlined,
+                title: 'No Rewards Yet',
+                subtitle:
+                    'Motivate your children by creating exciting rewards they can earn with points.',
+                actionLabel: 'Create First Reward',
+                onAction: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddRewardScreen(),
+                    ),
+                  );
+                },
+                iconColor: Colors.purple,
+              ),
             ),
           );
         }
@@ -567,46 +865,15 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
       builder: (context, userState, choreState, child) {
         if (userState.childrenInFamily.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.people_outline,
-                  size: 64,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'No children in family yet',
-                  style: TextStyle(fontSize: 18, color: Colors.grey),
-                ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.shade200),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Family Code: $familyCode',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Share this code with your children so they can join your family',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: ProfessionalEmptyState(
+                icon: Icons.people_outline,
+                title: 'No Children Added',
+                subtitle:
+                    'Share your family code ($familyCode) with your children so they can join and start earning points.',
+                iconColor: Colors.blue,
+              ),
             ),
           );
         }
@@ -634,15 +901,19 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     return const FamilyLeaderboardScreen();
   }
 
-  Widget _buildChildCard(Child childUser, ChoreState choreState, RewardState rewardState) {
+  Widget _buildChildCard(
+      Child childUser, ChoreState choreState, RewardState rewardState) {
     final completedChoreCount = choreState.chores
-        .where((chore) => chore.isCompleted && chore.completedBy == childUser.id)
+        .where(
+            (chore) => chore.isCompleted && chore.completedBy == childUser.id)
         .length;
 
-    final redeemedRewardCount = rewardState.getChildRedeemedRewards(childUser.id).length;
+    final redeemedRewardCount =
+        rewardState.getChildRedeemedRewards(childUser.id).length;
 
     final milestoneManager = MilestoneManager();
-    final currentMilestone = milestoneManager.getCurrentMilestone(childUser.points);
+    final currentMilestone =
+        milestoneManager.getCurrentMilestone(childUser.points);
     final nextMilestone = milestoneManager.getNextMilestone(childUser.points);
 
     return Card(
@@ -699,7 +970,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(16),
@@ -727,10 +999,25 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                     ],
                   ),
                 ),
+                // Remove child button
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.person_remove,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    tooltip: 'Remove child from family',
+                    onPressed: () => _showRemoveChildDialog(childUser),
+                  ),
+                ),
               ],
             ),
           ),
-          
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -748,20 +1035,12 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                   Icons.card_giftcard,
                   Colors.amber,
                 ),
-
                 if (currentMilestone != null)
                   _buildMilestoneSectionImproved(
-                    'Current Milestone', 
-                    currentMilestone, 
-                    childUser.points
-                  ),
-
+                      'Current Milestone', currentMilestone, childUser.points),
                 if (nextMilestone != null)
                   _buildMilestoneSectionImproved(
-                    'Next Milestone', 
-                    nextMilestone, 
-                    childUser.points
-                  ),
+                      'Next Milestone', nextMilestone, childUser.points),
               ],
             ),
           ),
@@ -770,12 +1049,14 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     );
   }
 
-  Widget _buildMilestoneSectionImproved(String label, Milestone milestone, int currentPoints) {
+  Widget _buildMilestoneSectionImproved(
+      String label, Milestone milestone, int currentPoints) {
     final bool isCurrentMilestone = label == 'Current Milestone';
-    final int pointsNeeded = isCurrentMilestone ? 0 : milestone.pointThreshold - currentPoints;
-    final double progress = isCurrentMilestone ? 1.0 : 
-      currentPoints / milestone.pointThreshold;
-    
+    final int pointsNeeded =
+        isCurrentMilestone ? 0 : milestone.pointThreshold - currentPoints;
+    final double progress =
+        isCurrentMilestone ? 1.0 : currentPoints / milestone.pointThreshold;
+
     return Container(
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(12),
@@ -835,13 +1116,15 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       value: progress,
                       minHeight: 8,
                       backgroundColor: Colors.grey.shade200,
-                      valueColor: AlwaysStoppedAnimation<Color>(milestone.color),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(milestone.color),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: milestone.color.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -863,7 +1146,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     );
   }
 
-  Widget _buildChildStatRow(String label, String value, IconData icon, Color color) {
+  Widget _buildChildStatRow(
+      String label, String value, IconData icon, Color color) {
     return Row(
       children: [
         Container(
@@ -906,7 +1190,9 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     return Consumer2<ChoreState, RewardState>(
       builder: (context, choreState, rewardState, child) {
         if (choreState.isLoading || rewardState.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const ProfessionalLoadingIndicator(
+            message: 'Loading statistics...',
+          );
         }
 
         return _buildStatisticsContent(choreState, rewardState);
@@ -914,64 +1200,228 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     );
   }
 
-  Widget _buildStatisticsContent(ChoreState choreState, RewardState rewardState) {
+  Widget _buildStatisticsContent(
+      ChoreState choreState, RewardState rewardState) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final totalChores = choreState.chores.length;
-    final completedChores = choreState.chores.where((c) => c.isCompleted).length;
-    final pendingChores = choreState.chores.where((c) => c.isPendingApproval).length;
+    final completedChores =
+        choreState.chores.where((c) => c.isCompleted).length;
+    final pendingChores =
+        choreState.chores.where((c) => c.isPendingApproval).length;
     final totalRewards = rewardState.rewards.length;
-    final redeemedRewards = rewardState.rewards.where((r) => r.isRedeemed).length;
+    final redeemedRewards =
+        rewardState.rewards.where((r) => r.isRedeemed).length;
+    final completionRate =
+        totalChores > 0 ? ((completedChores / totalChores) * 100).round() : 0;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Dashboard header
           const Text(
-            'Family Statistics',
+            'Family Dashboard',
             style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: ChorePalColors.textPrimary,
+              letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 16),
-          
-          Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+          const SizedBox(height: 8),
+          const Text(
+            'Overview of your family\'s activity',
+            style: TextStyle(
+              fontSize: 15,
+              color: ChorePalColors.textSecondary,
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildStatRow('Total Chores Created', '$totalChores', Icons.assignment),
-                  _buildStatRow('Completed Chores', '$completedChores', Icons.check_circle),
-                  _buildStatRow('Pending Approval', '$pendingChores', Icons.hourglass_top),
-                  _buildStatRow('Total Rewards', '$totalRewards', Icons.card_giftcard),
-                  _buildStatRow('Redeemed Rewards', '$redeemedRewards', Icons.redeem),
+          ),
+          const SizedBox(height: 24),
+          // Fun statistics row
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                FunStatItem(
+                  label: 'Total Chores',
+                  value: '$totalChores',
+                  icon: Icons.assignment,
+                  color: ChorePalColors.skyBlue,
+                ),
+                const SizedBox(width: 12),
+                FunStatItem(
+                  label: 'Completed',
+                  value: '$completedChores',
+                  icon: Icons.check_circle,
+                  color: ChorePalColors.grassGreen,
+                ),
+                const SizedBox(width: 12),
+                FunStatItem(
+                  label: 'Pending',
+                  value: '$pendingChores',
+                  icon: Icons.hourglass_top,
+                  color: ChorePalColors.sunshineOrange,
+                ),
+                const SizedBox(width: 12),
+                FunStatItem(
+                  label: 'Rewards',
+                  value: '$totalRewards',
+                  icon: Icons.card_giftcard,
+                  gradient: ChorePalColors.rewardGradient,
+                  color: ChorePalColors.lavenderPurple,
+                ),
+                const SizedBox(width: 12),
+                FunStatItem(
+                  label: 'Redeemed',
+                  value: '$redeemedRewards',
+                  icon: Icons.redeem,
+                  color: ChorePalColors.strawberryPink,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Completion rate progress bar
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  ChorePalColors.lavenderPurple.withOpacity(0.15),
+                  ChorePalColors.strawberryPink.withOpacity(0.15),
                 ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: ChorePalColors.lavenderPurple.withOpacity(0.3),
+                width: 1.5,
               ),
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: ChorePalColors.accentGradient,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.trending_up,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Completion Rate',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: isDarkMode
+                                    ? Colors.white
+                                    : ChorePalColors.textPrimary,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Your family\'s progress',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDarkMode
+                                    ? Colors.grey.shade300
+                                    : ChorePalColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: ChorePalColors.accentGradient,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                ChorePalColors.lavenderPurple.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        '$completionRate%',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: completionRate / 100),
+                    duration: const Duration(milliseconds: 1000),
+                    curve: Curves.easeOut,
+                    builder: (context, value, child) {
+                      return LinearProgressIndicator(
+                        value: value,
+                        minHeight: 20,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          ChorePalColors.lavenderPurple,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
-          
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
+          // Children progress section
           const Text(
             'Children Progress',
             style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+              color: ChorePalColors.textPrimary,
+              letterSpacing: 0.3,
             ),
           ),
           const SizedBox(height: 16),
-
           _buildChildrenProgressSection(choreState, rewardState),
         ],
       ),
     );
   }
 
-  Widget _buildChildrenProgressSection(ChoreState choreState, RewardState rewardState) {
+  Widget _buildChildrenProgressSection(
+      ChoreState choreState, RewardState rewardState) {
     return Consumer<UserState>(
       builder: (context, userState, _) {
         if (userState.childrenInFamily.isEmpty) {
@@ -992,64 +1442,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     );
   }
 
-  Widget _buildStatRow(String label, String value, IconData icon) {
-    final color = _getStatColor(icon);
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 20, color: color),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 16,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: color.withValues(alpha: 0.3)),
-            ),
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Color _getStatColor(IconData icon) {
-    if (icon == Icons.check_circle) {
-      return Colors.green;
-    } else if (icon == Icons.hourglass_top) {
-      return Colors.orange;
-    } else if (icon == Icons.assignment) {
-      return Colors.blue;
-    } else if (icon == Icons.card_giftcard || icon == Icons.redeem) {
-      return Colors.purple;
-    }
-    return Colors.blue;
-  }
-
-  Future<void> _handleApproveChore(String choreId, String childId, int points) async {
+  Future<void> _handleApproveChore(
+      String choreId, String childId, int points) async {
     try {
       await Provider.of<ChoreState>(context, listen: false)
           .approveChore(choreId, childId);
@@ -1084,7 +1478,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
     final rewardController = TextEditingController();
-    
+
     bool includeReward = false;
     String selectedPriority = 'medium';
     DateTime selectedDate = DateTime.now().add(const Duration(days: 1));
@@ -1117,7 +1511,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                             color: Colors.green.shade100,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.add_task, color: Colors.green.shade700),
+                          child: Icon(Icons.add_task,
+                              color: Colors.green.shade700),
                         ),
                         const SizedBox(width: 12),
                         const Expanded(
@@ -1139,7 +1534,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                     ),
                     const Divider(),
                     const SizedBox(height: 16),
-                    
                     TextField(
                       controller: titleController,
                       decoration: InputDecoration(
@@ -1165,7 +1559,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       textCapitalization: TextCapitalization.sentences,
                     ),
                     const SizedBox(height: 16),
-                    
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -1174,10 +1567,11 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       ),
                       child: SwitchListTile(
                         title: const Text('Include Reward Points'),
-                        subtitle: const Text('Motivate with points for completion'),
+                        subtitle:
+                            const Text('Motivate with points for completion'),
                         dense: true,
                         value: includeReward,
-                        activeColor: Colors.green,
+                        activeThumbColor: Colors.green,
                         contentPadding: EdgeInsets.zero,
                         onChanged: (value) {
                           setDialogState(() {
@@ -1189,7 +1583,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         },
                       ),
                     ),
-                    
                     if (includeReward) ...[
                       const SizedBox(height: 16),
                       TextField(
@@ -1205,7 +1598,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         keyboardType: TextInputType.number,
                       ),
                     ],
-                    
                     const SizedBox(height: 16),
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -1214,21 +1606,22 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: SwitchListTile(
-                        title: Row(
+                        title: const Row(
                           children: [
                             Icon(
-                              Icons.priority_high, 
+                              Icons.priority_high,
                               color: Colors.red,
                               size: 18,
                             ),
-                            const SizedBox(width: 8),
-                            const Text('High Priority'),
+                            SizedBox(width: 8),
+                            Text('High Priority'),
                           ],
                         ),
-                        subtitle: const Text('This chore will be highlighted for children'),
+                        subtitle: const Text(
+                            'This chore will be highlighted for children'),
                         dense: true,
                         value: selectedPriority == 'high',
-                        activeColor: Colors.red,
+                        activeThumbColor: Colors.red,
                         contentPadding: EdgeInsets.zero,
                         onChanged: (value) {
                           setDialogState(() {
@@ -1237,7 +1630,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         },
                       ),
                     ),
-                    
                     const SizedBox(height: 16),
                     Text(
                       'Deadline:',
@@ -1248,16 +1640,16 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       ),
                     ),
                     const SizedBox(height: 8),
-                    
                     InkWell(
                       onTap: () async {
                         final DateTime? pickedDate = await showDatePicker(
                           context: context,
                           initialDate: selectedDate,
                           firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 365)),
                         );
-                        
+
                         if (pickedDate != null) {
                           setDialogState(() {
                             selectedDate = pickedDate;
@@ -1303,9 +1695,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         ),
                       ),
                     ),
-                    
                     const SizedBox(height: 12),
-                    
                     InkWell(
                       onTap: () async {
                         final TimeOfDay? pickedTime = await showTimePicker(
@@ -1320,7 +1710,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                             );
                           },
                         );
-                        
+
                         if (pickedTime != null) {
                           setDialogState(() {
                             selectedTime = pickedTime;
@@ -1366,7 +1756,6 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         ),
                       ),
                     ),
-                    
                     const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -1388,7 +1777,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                           ),
                           onPressed: () {
                             if (titleController.text.isNotEmpty) {
-                              Provider.of<ChoreState>(context, listen: false).addChore(
+                              Provider.of<ChoreState>(context, listen: false)
+                                  .addChore(
                                 Chore(
                                   id: DateTime.now().toString(),
                                   title: titleController.text,
@@ -1400,7 +1790,10 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                                     selectedTime.hour,
                                     selectedTime.minute,
                                   ),
-                                  pointValue: includeReward ? (int.tryParse(rewardController.text) ?? 0) : 0,
+                                  pointValue: includeReward
+                                      ? (int.tryParse(rewardController.text) ??
+                                          0)
+                                      : 0,
                                   priority: selectedPriority,
                                 ),
                               );
@@ -1418,5 +1811,165 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
         ),
       ),
     );
+  }
+
+  /// Shows a confirmation dialog for removing a child
+  void _showRemoveChildDialog(Child child) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.warning,
+                  color: Colors.red.shade700,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('Remove Child'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Are you sure you want to remove ${child.name} from your family?',
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: Colors.red.shade700, size: 16),
+                        const SizedBox(width: 8),
+                        Text(
+                          'This action will:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '• Permanently delete ${child.name}\'s account',
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 14),
+                    ),
+                    Text(
+                      '• Remove all their points and progress',
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 14),
+                    ),
+                    Text(
+                      '• Delete their chore and reward history',
+                      style:
+                          TextStyle(color: Colors.red.shade700, fontSize: 14),
+                    ),
+                    Text(
+                      '• This action cannot be undone',
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _removeChild(child);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Remove Child'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Removes a child from the family
+  Future<void> _removeChild(Child child) async {
+    try {
+      await Provider.of<UserState>(context, listen: false)
+          .removeChildFromFamily(child.id);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('${child.name} has been removed from the family'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Failed to remove child: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    }
   }
 }

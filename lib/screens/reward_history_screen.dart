@@ -3,14 +3,12 @@ import 'package:provider/provider.dart';
 import '../models/reward.dart';
 import '../models/reward_state.dart';
 import '../models/user_state.dart';
-/* unused
-import '../models/user.dart';
-*/
 import 'package:intl/intl.dart';
 
 
 class RewardHistoryScreen extends StatelessWidget {
-  final String? childId; // Optional - if passed, shows only this child's history
+  final String?
+      childId; // Optional - if passed, shows only this child's history
 
   const RewardHistoryScreen({Key? key, this.childId}) : super(key: key);
 
@@ -18,12 +16,13 @@ class RewardHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(childId != null ? 'My Reward History' : 'Family Reward History'),
+        title: Text(
+            childId != null ? 'My Reward History' : 'Family Reward History'),
       ),
       body: Consumer2<RewardState, UserState>(
         builder: (context, rewardState, userState, child) {
           final rewards = rewardState.getRewardHistory(childId: childId);
-          
+
           if (rewards.isEmpty) {
             return const Center(
               child: Column(
@@ -44,10 +43,10 @@ class RewardHistoryScreen extends StatelessWidget {
               ),
             );
           }
-          
+
           // Group rewards by month
           final groupedRewards = _groupRewardsByMonth(rewards);
-          
+
           return RefreshIndicator(
             onRefresh: () async {
               await rewardState.loadRewards();
@@ -58,13 +57,14 @@ class RewardHistoryScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final monthKey = groupedRewards.keys.elementAt(index);
                 final monthRewards = groupedRewards[monthKey]!;
-                
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Month header
                     Padding(
-                      padding: const EdgeInsets.only(top: 8.0, bottom: 8.0, left: 4.0),
+                      padding: const EdgeInsets.only(
+                          top: 8.0, bottom: 8.0, left: 4.0),
                       child: Text(
                         monthKey,
                         style: const TextStyle(
@@ -81,8 +81,8 @@ class RewardHistoryScreen extends StatelessWidget {
                       itemCount: monthRewards.length,
                       itemBuilder: (context, rewardIndex) {
                         return _buildCompactHistoryItem(
-                          context, 
-                          monthRewards[rewardIndex], 
+                          context,
+                          monthRewards[rewardIndex],
                           userState,
                         );
                       },
@@ -98,23 +98,23 @@ class RewardHistoryScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   // Group rewards by month
   Map<String, List<Reward>> _groupRewardsByMonth(List<Reward> rewards) {
     final Map<String, List<Reward>> grouped = {};
-    
+
     for (final reward in rewards) {
       if (reward.redeemedAt != null) {
         final monthKey = DateFormat('MMMM yyyy').format(reward.redeemedAt!);
-        
+
         if (!grouped.containsKey(monthKey)) {
           grouped[monthKey] = [];
         }
-        
+
         grouped[monthKey]!.add(reward);
       }
     }
-    
+
     // Sort the map keys by date (most recent first)
     final sortedKeys = grouped.keys.toList()
       ..sort((a, b) {
@@ -122,28 +122,25 @@ class RewardHistoryScreen extends StatelessWidget {
         final bDate = DateFormat('MMMM yyyy').parse(b);
         return bDate.compareTo(aDate); // Descending order
       });
-    
+
     // Create a new map with the sorted keys
     final Map<String, List<Reward>> sortedGrouped = {};
     for (final key in sortedKeys) {
       sortedGrouped[key] = grouped[key]!;
     }
-    
+
     return sortedGrouped;
   }
 
   Widget _buildCompactHistoryItem(
-    BuildContext context, 
-    Reward reward, 
-    UserState userState
-  ) {
+      BuildContext context, Reward reward, UserState userState) {
     // Find the child name if available
     String? childName;
     if (reward.redeemedBy != null) {
       final child = userState.getChildById(reward.redeemedBy!);
       childName = child?.name;
     }
-    
+
     return Card(
       elevation: 1,
       margin: const EdgeInsets.only(bottom: 8),
@@ -176,7 +173,8 @@ class RewardHistoryScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 if (reward.redeemedAt != null) ...[
-                  Icon(Icons.calendar_today, size: 14, color: Colors.blue.shade700),
+                  Icon(Icons.calendar_today,
+                      size: 14, color: Colors.blue.shade700),
                   const SizedBox(width: 4),
                   Text(
                     DateFormat('MMM d').format(reward.redeemedAt!),
@@ -208,7 +206,7 @@ class RewardHistoryScreen extends StatelessWidget {
         ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: 8, 
+            horizontal: 8,
             vertical: 4,
           ),
           decoration: BoxDecoration(
@@ -240,4 +238,4 @@ class RewardHistoryScreen extends StatelessWidget {
         return Colors.grey;
     }
   }
-} 
+}

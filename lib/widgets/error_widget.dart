@@ -102,10 +102,10 @@ class InlineErrorWidget extends StatelessWidget {
             const SizedBox(width: 8),
             TextButton(
               onPressed: onRetry,
-              child: const Text('Retry'),
               style: TextButton.styleFrom(
                 foregroundColor: Colors.red.shade800,
               ),
+              child: const Text('Retry'),
             ),
           ],
         ],
