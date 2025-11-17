@@ -5,6 +5,7 @@ import 'package:confetti/confetti.dart';
 import '../models/leaderboard.dart';
 import '../models/user_state.dart';
 import '../models/chore_state.dart';
+import '../utils/chorepal_colors.dart';
 
 class FamilyLeaderboardScreen extends StatefulWidget {
   final String? currentChildId; // If viewing as a child
@@ -179,37 +180,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Family Leaderboard'),
-        elevation: 0,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              setState(() {
-                _selectedPeriod = value;
-              });
-              _loadLeaderboardData();
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'week', child: Text('This Week')),
-              const PopupMenuItem(value: 'month', child: Text('This Month')),
-              const PopupMenuItem(value: 'all-time', child: Text('All Time')),
-            ],
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(_getPeriodTitle()),
-                  const Icon(Icons.arrow_drop_down),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Stack(
+    return Stack(
         children: [
           // Background gradient
           Container(
@@ -251,6 +222,89 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _buildLeaderboardContent(),
+        ],
+    );
+  }
+
+  Widget _buildPeriodSelectorBar() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDarkMode
+            ? ChorePalColors.darkBlueGradient
+            : ChorePalColors.primaryGradient,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Family Leaderboard',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              setState(() {
+                _selectedPeriod = value;
+              });
+              _loadLeaderboardData();
+            },
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
+            color: isDarkMode
+                ? const Color(0xFF2D2D2D)
+                : Colors.white,
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'week',
+                child: Text(
+                  'This Week',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'month',
+                child: Text(
+                  'This Month',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'all-time',
+                child: Text(
+                  'All Time',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _getPeriodTitle(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.arrow_drop_down, color: Colors.white),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -296,6 +350,10 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
       onRefresh: _loadLeaderboardData,
       child: CustomScrollView(
         slivers: [
+          // Period selector bar
+          SliverToBoxAdapter(
+            child: _buildPeriodSelectorBar(),
+          ),
           // Header section with trophy
           SliverToBoxAdapter(
             child: _buildHeaderSection(),

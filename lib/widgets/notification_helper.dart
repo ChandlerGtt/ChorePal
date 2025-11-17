@@ -85,15 +85,6 @@ class NotificationHelper {
     }
   }
 
-  // Show a simple test notification
-  static Future<void> showTestNotification() async {
-    await _notificationService.showNotification(
-      id: 1,
-      title: 'ChorePal',
-      body: 'This is a test notification!',
-    );
-  }
-
   // Show chore completion notification
   static Future<void> showChoreCompletedNotification(String choreName) async {
     await _notificationService.showNotification(
@@ -119,20 +110,6 @@ class NotificationHelper {
       title: 'Milestone Reached! 🌟',
       body: 'Congratulations! $milestone',
     );
-  }
-
-  // Request permissions and show a test notification
-  static Future<void> requestPermissionsAndTest() async {
-    print('Requesting notification permissions...');
-    final hasPermission = await _notificationService.requestPermissions();
-    print('Permission granted: $hasPermission');
-
-    if (hasPermission) {
-      print('Showing test notification...');
-      await showTestNotification();
-    } else {
-      print('Permission denied, cannot show test notification');
-    }
   }
 
   // Check notification status

@@ -11,6 +11,7 @@ class User {
   final bool pushNotificationsEnabled;
   final bool emailNotificationsEnabled;
   final bool smsNotificationsEnabled;
+  final String? profileIcon; // 'boy', 'girl', or null
 
   User({
     required this.id,
@@ -22,6 +23,7 @@ class User {
     this.pushNotificationsEnabled = true,
     this.emailNotificationsEnabled = true,
     this.smsNotificationsEnabled = false,
+    this.profileIcon,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Create a User from Firestore data
@@ -46,6 +48,7 @@ class User {
       'pushNotificationsEnabled': pushNotificationsEnabled,
       'emailNotificationsEnabled': emailNotificationsEnabled,
       'smsNotificationsEnabled': smsNotificationsEnabled,
+      if (profileIcon != null) 'profileIcon': profileIcon,
     };
   }
 }
@@ -65,6 +68,7 @@ class Parent extends User {
     bool pushNotificationsEnabled = true,
     bool emailNotificationsEnabled = true,
     bool smsNotificationsEnabled = false,
+    String? profileIcon,
   }) : super(
     id: id,
     name: name,
@@ -74,6 +78,7 @@ class Parent extends User {
     pushNotificationsEnabled: pushNotificationsEnabled,
     emailNotificationsEnabled: emailNotificationsEnabled,
     smsNotificationsEnabled: smsNotificationsEnabled,
+    profileIcon: profileIcon,
   );
 
   // Create a Parent from Firestore data
@@ -90,6 +95,7 @@ class Parent extends User {
       pushNotificationsEnabled: data['pushNotificationsEnabled'] ?? true,
       emailNotificationsEnabled: data['emailNotificationsEnabled'] ?? true,
       smsNotificationsEnabled: data['smsNotificationsEnabled'] ?? false,
+      profileIcon: data['profileIcon'] as String?,
     );
   }
 
@@ -123,6 +129,7 @@ class Child extends User {
     bool pushNotificationsEnabled = true,
     bool emailNotificationsEnabled = true,
     bool smsNotificationsEnabled = false,
+    String? profileIcon,
   }) : super(
     id: id,
     name: name,
@@ -133,6 +140,7 @@ class Child extends User {
     pushNotificationsEnabled: pushNotificationsEnabled,
     emailNotificationsEnabled: emailNotificationsEnabled,
     smsNotificationsEnabled: smsNotificationsEnabled,
+    profileIcon: profileIcon,
   );
 
   // Create a Child from Firestore data
@@ -151,6 +159,7 @@ class Child extends User {
       pushNotificationsEnabled: data['pushNotificationsEnabled'] ?? true,
       emailNotificationsEnabled: data['emailNotificationsEnabled'] ?? true,
       smsNotificationsEnabled: data['smsNotificationsEnabled'] ?? false,
+      profileIcon: data['profileIcon'] as String?,
     );
   }
 
@@ -183,6 +192,7 @@ class Child extends User {
       pushNotificationsEnabled: pushNotificationsEnabled,
       emailNotificationsEnabled: emailNotificationsEnabled,
       smsNotificationsEnabled: smsNotificationsEnabled,
+      profileIcon: profileIcon,
     );
   }
 
@@ -203,6 +213,7 @@ class Child extends User {
       pushNotificationsEnabled: pushNotificationsEnabled,
       emailNotificationsEnabled: emailNotificationsEnabled,
       smsNotificationsEnabled: smsNotificationsEnabled,
+      profileIcon: profileIcon,
     );
   }
 
@@ -220,6 +231,7 @@ class Child extends User {
       pushNotificationsEnabled: pushNotificationsEnabled,
       emailNotificationsEnabled: emailNotificationsEnabled,
       smsNotificationsEnabled: smsNotificationsEnabled,
+      profileIcon: profileIcon,
     );
   }
 } 

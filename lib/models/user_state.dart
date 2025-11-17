@@ -299,6 +299,37 @@ class UserState extends ChangeNotifier {
     }
   }
 
+  // Update profile icon
+  Future<void> updateProfileIcon(String userId, String? profileIcon) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      // Update in Firestore
+      await _firestoreService.users.doc(userId).update({
+        'profileIcon': profileIcon,
+      });
+
+      // Update local state if this is the current user
+      if (_currentUser != null && _currentUser!.id == userId) {
+        // Reload the current user to get updated data
+        await loadCurrentUser();
+      }
+
+      // If this is a child in the family, reload family data to update the list
+      if (_familyId != null && _familyId!.isNotEmpty) {
+        await loadFamilyData();
+      }
+    } catch (e) {
+      print('Error updating profile icon: $e');
+      _errorMessage = 'Failed to update profile icon. Please try again.';
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     try {

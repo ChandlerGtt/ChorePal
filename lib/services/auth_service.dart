@@ -1,13 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Initialize auth persistence for web
+  // Initialize auth persistence for web only
   Future<void> initialize() async {
     try {
-      // Set persistence for web - this ensures login state persists across browser sessions
-      await _auth.setPersistence(Persistence.LOCAL);
+      // Set persistence for web only - this ensures login state persists across browser sessions
+      // This method is only available on web platform
+      if (kIsWeb) {
+        await _auth.setPersistence(Persistence.LOCAL);
+      }
     } catch (e) {
       // Silently handle persistence errors - not critical for app functionality
     }
@@ -58,6 +62,17 @@ class AuthService {
   Future<UserCredential> signInAnonymously() async {
     try {
       return await _auth.signInAnonymously();
+    } on FirebaseAuthException catch (e) {
+      throw _getFirebaseAuthException(e);
+    } catch (e) {
+      throw Exception('Something went wrong. Please try again.');
+    }
+  }
+
+  // Send password reset email
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
     } on FirebaseAuthException catch (e) {
       throw _getFirebaseAuthException(e);
     } catch (e) {

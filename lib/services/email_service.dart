@@ -26,18 +26,4 @@ class EmailService {
       rethrow; // Re-throw so we can see the actual error
     }
   }
-
-  /// Send a test email to the specified recipient
-  static Future<bool> sendTestEmail(String to) async {
-    try {
-      return await sendEmail(
-        to,
-        'ChorePal Test Email',
-        'This is a test email from ChorePal. If you received this, email notifications are working!',
-      );
-    } catch (e) {
-      print('sendTestEmail error: $e');
-      rethrow; // Re-throw so dashboard can show the error
-    }
-  }
 }

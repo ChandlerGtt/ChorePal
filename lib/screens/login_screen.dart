@@ -231,6 +231,7 @@ class _LoginScreenState extends State<LoginScreen>
                   _buildEmailField(),
                   const SizedBox(height: 16),
                   _buildPasswordField(),
+                  if (!_isRegistering) _buildForgotPasswordLink(),
                   if (_errorMessage != null) _buildErrorMessage(),
                   const SizedBox(height: 24),
                   _buildParentActionButton(),
@@ -543,6 +544,239 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
             ),
     );
+  }
+
+  /// Builds the forgot password link
+  Widget _buildForgotPasswordLink() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: _isLoading ? null : _showPasswordResetDialog,
+        child: Text(
+          'Forgot Password?',
+          style: TextStyle(
+            color:
+                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Shows password reset dialog
+  void _showPasswordResetDialog() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final resetEmailController = TextEditingController();
+    bool isSendingReset = false;
+    String? resetErrorMessage;
+    String? resetSuccessMessage;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: ChorePalColors.darkBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.lock_reset,
+                    color: ChorePalColors.darkBlue,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text('Reset Password'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Enter your email address and we\'ll send you a link to reset your password.',
+                    style: TextStyle(
+                      color: isDarkMode
+                          ? Colors.grey.shade300
+                          : Colors.grey.shade700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: resetEmailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      hintText: 'your.email@example.com',
+                      prefixIcon:
+                          Icon(Icons.email, color: ChorePalColors.darkBlue),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                            color: ChorePalColors.darkBlue, width: 2),
+                      ),
+                      filled: true,
+                      fillColor:
+                          isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+                    ),
+                    style: TextStyle(
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    enabled: !isSendingReset,
+                  ),
+                  if (resetErrorMessage != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline,
+                              color: Colors.red.shade700, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              resetErrorMessage!,
+                              style: TextStyle(
+                                color: Colors.red.shade700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (resetSuccessMessage != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle_outline,
+                              color: Colors.green.shade700, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              resetSuccessMessage!,
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSendingReset
+                    ? null
+                    : () {
+                        Navigator.of(dialogContext).pop();
+                      },
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: isSendingReset
+                    ? null
+                    : () async {
+                        final email = resetEmailController.text.trim();
+                        if (email.isEmpty || !email.contains('@')) {
+                          setDialogState(() {
+                            resetErrorMessage =
+                                'Please enter a valid email address';
+                            resetSuccessMessage = null;
+                          });
+                          return;
+                        }
+
+                        setDialogState(() {
+                          isSendingReset = true;
+                          resetErrorMessage = null;
+                          resetSuccessMessage = null;
+                        });
+
+                        try {
+                          await _authService.sendPasswordResetEmail(email);
+                          setDialogState(() {
+                            resetSuccessMessage =
+                                'Password reset email sent! Please check your inbox and follow the instructions.';
+                            resetErrorMessage = null;
+                            isSendingReset = false;
+                          });
+
+                          // Auto-close dialog after 3 seconds
+                          Future.delayed(const Duration(seconds: 3), () {
+                            if (dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop();
+                            }
+                          });
+                        } catch (e) {
+                          setDialogState(() {
+                            resetErrorMessage =
+                                e.toString().replaceAll('Exception: ', '');
+                            resetSuccessMessage = null;
+                            isSendingReset = false;
+                          });
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ChorePalColors.darkBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: isSendingReset
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Send Reset Link'),
+              ),
+            ],
+          ),
+        );
+      },
+    ).then((_) {
+      // Dispose controller when dialog is closed
+      resetEmailController.dispose();
+    });
   }
 
   /// Builds the toggle button to switch between login and register
@@ -893,31 +1127,85 @@ class _LoginScreenState extends State<LoginScreen>
 
   /// Handles parent registration
   Future<void> _handleParentRegistration() async {
-    // Register new parent
-    final credential = await _authService.registerWithEmailAndPassword(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
+    try {
+      // Register new parent (automatically signs the user in)
+      final credential = await _authService.registerWithEmailAndPassword(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
 
-    // Create a new family
-    final familyRef = await _firestoreService.createFamily(
-      credential.user!.uid,
-      'Family ${_nameController.text}',
-    );
+      // Verify user is authenticated (auto-login happens automatically with registration)
+      if (credential.user == null) {
+        throw Exception('Registration succeeded but user is not signed in');
+      }
 
-    // Create user profile
-    await _firestoreService.createParentProfile(
-      credential.user!.uid,
-      _nameController.text,
-      _emailController.text,
-      familyId: familyRef.id,
-      phoneNumber: _phoneNumberController.text.trim().isNotEmpty
+      // Create a new family
+      final familyRef = await _firestoreService.createFamily(
+        credential.user!.uid,
+        'Family ${_nameController.text}',
+      );
+
+      // Get phone number if provided
+      final phoneNumber = _phoneNumberController.text.trim().isNotEmpty
           ? _phoneNumberController.text.trim()
-          : null,
-    );
+          : null;
 
-    if (mounted) {
-      await _initializeStateAndNavigateToParentDashboard(familyRef.id);
+      // Create user profile
+      try {
+        await _firestoreService.createParentProfile(
+          credential.user!.uid,
+          _nameController.text,
+          _emailController.text,
+          familyId: familyRef.id,
+          phoneNumber: phoneNumber,
+        );
+      } catch (userProfileError) {
+        // Don't navigate if user profile creation failed
+        throw Exception(
+            'Family was created, but user profile creation failed: ${userProfileError.toString().replaceAll('Exception: ', '')}');
+      }
+
+      // Wait for the user document to be readable in Firestore
+      // This ensures the document has propagated before navigation
+      bool documentExists = false;
+      for (int attempt = 0; attempt < 10; attempt++) {
+        final doc =
+            await _firestoreService.users.doc(credential.user!.uid).get();
+        if (doc.exists) {
+          documentExists = true;
+          break;
+        }
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+
+      if (!documentExists) {
+        // Document still not readable after retries, but continue anyway
+        // AuthWrapper will handle retrying when it loads
+      }
+
+      // Verify auth state is set (user is automatically logged in after registration)
+      // Firebase's createUserWithEmailAndPassword automatically signs the user in
+      // Wait a moment for the auth state to fully propagate
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Verify the user is authenticated and the session is established
+      final currentUser = _authService.currentUser;
+      if (currentUser == null || currentUser.uid != credential.user!.uid) {
+        throw Exception(
+            'User session not properly established after registration. Please try logging in manually.');
+      }
+
+      // Force a reload of the user to ensure auth state is fully synced
+      // This helps ensure the session persists across app restarts
+      await currentUser.reload();
+
+      // User is now logged in and will stay logged in when they reopen the app
+      // Navigate to dashboard with state initialization
+      if (mounted) {
+        await _initializeStateAndNavigateToParentDashboard(familyRef.id);
+      }
+    } catch (e) {
+      rethrow; // Re-throw to be caught by the outer catch block
     }
   }
 
@@ -1008,10 +1296,8 @@ class _LoginScreenState extends State<LoginScreen>
         if (existingChild != null) {
           // Child already exists, use their existing ID
           childId = existingChild.id;
-          print('Found existing child: $childName with ID: $childId');
         } else {
           // Create a new child
-          print('Creating new child: $childName');
 
           // Create a Firebase Auth account for the child
           // Use a unique email format for children with timestamp to ensure uniqueness

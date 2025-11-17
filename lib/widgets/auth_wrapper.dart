@@ -1,6 +1,7 @@
 // lib/widgets/auth_wrapper.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/chore_state.dart';
@@ -41,17 +42,41 @@ class _AuthWrapperState extends State<AuthWrapper> {
         return;
       }
 
-      // Get user data from Firestore
-      final userDoc = await _firestoreService.users.doc(user.uid).get();
+      // Get user data from Firestore with retry logic
+      // This handles cases where the document was just created and hasn't propagated yet
+      DocumentSnapshot? userDoc;
+      const maxRetries = 10;
+      const retryDelay = Duration(milliseconds: 500);
 
-      if (!userDoc.exists) {
-        // User exists in Firebase Auth but not in Firestore
-        // This shouldn't happen, but handle gracefully
-        await _authService.signOut();
-        setState(() {
-          _isLoading = false;
-        });
-        return;
+      for (int attempt = 0; attempt < maxRetries; attempt++) {
+        userDoc = await _firestoreService.users.doc(user.uid).get();
+
+        if (userDoc.exists) {
+          break; // Document found, exit retry loop
+        }
+
+        // If this is not the last attempt, wait before retrying
+        if (attempt < maxRetries - 1) {
+          await Future.delayed(retryDelay);
+        }
+      }
+
+      if (userDoc == null || !userDoc.exists) {
+        // User exists in Firebase Auth but not in Firestore after retries
+        // This could happen if registration failed or document creation is still pending
+        // Wait a bit longer and try one more time before signing out
+        await Future.delayed(const Duration(seconds: 2));
+        final finalDoc = await _firestoreService.users.doc(user.uid).get();
+
+        if (!finalDoc.exists) {
+          // Still doesn't exist after extended wait - sign out
+          await _authService.signOut();
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+        userDoc = finalDoc;
       }
 
       final userData = userDoc.data() as Map<String, dynamic>;
