@@ -293,6 +293,54 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  /// Builds the phone number field for parent registration
+  Widget _buildPhoneNumberField() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      children: [
+        TextFormField(
+          controller: _phoneNumberController,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            labelText: 'Phone Number (Optional)',
+            hintText: '+18777804236 (E.164 format)',
+            prefixIcon: isDarkMode
+                ? Container(
+                    decoration: const BoxDecoration(
+                      gradient: ChorePalColors.darkBlueGradient,
+                      shape: BoxShape.circle,
+                    ),
+                    margin: const EdgeInsets.all(8),
+                    child:
+                        const Icon(Icons.phone, color: Colors.white, size: 20),
+                  )
+                : Icon(Icons.phone, color: ChorePalColors.darkBlue),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: ChorePalColors.darkBlue, width: 2),
+            ),
+            filled: true,
+            fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+          ),
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black87,
+          ),
+          validator: (value) {
+            if (value != null && value.isNotEmpty && !value.startsWith('+')) {
+              return 'Phone number must be in E.164 format (e.g., +18777804236)';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
   /// Builds the name field for parent registration
   Widget _buildNameField() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -303,17 +351,7 @@ class _LoginScreenState extends State<LoginScreen>
           controller: _nameController,
           decoration: InputDecoration(
             labelText: 'Your Name',
-            prefixIcon: isDarkMode
-                ? Container(
-                    decoration: const BoxDecoration(
-                      gradient: ChorePalColors.darkBlueGradient,
-                      shape: BoxShape.circle,
-                    ),
-                    margin: const EdgeInsets.all(8),
-                    child:
-                        const Icon(Icons.person, color: Colors.white, size: 20),
-                  )
-                : const Icon(Icons.person, color: ChorePalColors.darkBlue),
+            prefixIcon: Icon(Icons.person, color: _primaryColor),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -342,16 +380,7 @@ class _LoginScreenState extends State<LoginScreen>
       controller: _emailController,
       decoration: InputDecoration(
         labelText: 'Email',
-        prefixIcon: isDarkMode
-            ? Container(
-                decoration: const BoxDecoration(
-                  gradient: ChorePalColors.darkBlueGradient,
-                  shape: BoxShape.circle,
-                ),
-                margin: const EdgeInsets.all(8),
-                child: const Icon(Icons.email, color: Colors.white, size: 20),
-              )
-            : const Icon(Icons.email, color: ChorePalColors.darkBlue),
+        prefixIcon: Icon(Icons.email, color: _primaryColor),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
@@ -362,7 +391,17 @@ class _LoginScreenState extends State<LoginScreen>
                 isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
             width: 2,
           ),
+          borderSide: BorderSide(
+            color:
+                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
+            width: 2,
+          ),
         ),
+        filled: true,
+        fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+      ),
+      style: TextStyle(
+        color: isDarkMode ? Colors.white : Colors.black87,
         filled: true,
         fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       ),
@@ -391,16 +430,7 @@ class _LoginScreenState extends State<LoginScreen>
       obscureText: true,
       decoration: InputDecoration(
         labelText: 'Password',
-        prefixIcon: isDarkMode
-            ? Container(
-                decoration: const BoxDecoration(
-                  gradient: ChorePalColors.darkBlueGradient,
-                  shape: BoxShape.circle,
-                ),
-                margin: const EdgeInsets.all(8),
-                child: const Icon(Icons.lock, color: Colors.white, size: 20),
-              )
-            : const Icon(Icons.lock, color: ChorePalColors.darkBlue),
+        prefixIcon: Icon(Icons.lock, color: _primaryColor),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
@@ -411,7 +441,18 @@ class _LoginScreenState extends State<LoginScreen>
                 isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
             width: 2,
           ),
+          borderSide: BorderSide(
+            color:
+                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
+            width: 2,
+          ),
         ),
+        filled: true,
+        fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+      ),
+      style: TextStyle(
+        color: isDarkMode ? Colors.white : Colors.black87,
+      ),
         filled: true,
         fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       ),
@@ -665,16 +706,7 @@ class _LoginScreenState extends State<LoginScreen>
           color: isDarkMode ? Colors.grey.shade300 : ChorePalColors.darkBlue,
           fontWeight: FontWeight.w500,
         ),
-        prefixIcon: isDarkMode
-            ? Container(
-                decoration: const BoxDecoration(
-                  gradient: ChorePalColors.darkBlueGradient,
-                  shape: BoxShape.circle,
-                ),
-                margin: const EdgeInsets.all(8),
-                child: const Icon(Icons.person, color: Colors.white, size: 20),
-              )
-            : const Icon(Icons.person, color: ChorePalColors.darkBlue),
+        prefixIcon: Icon(Icons.person, color: _primaryColor),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
@@ -685,11 +717,15 @@ class _LoginScreenState extends State<LoginScreen>
         hintText: 'Enter your name',
         filled: true,
         fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       ),
+      style: TextStyle(
+        color: isDarkMode ? Colors.white : Colors.black87,
       style: TextStyle(
         color: isDarkMode ? Colors.white : Colors.black87,
         fontSize: 16,
       ),
+      textCapitalization: TextCapitalization.words,
       textCapitalization: TextCapitalization.words,
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -711,21 +747,11 @@ class _LoginScreenState extends State<LoginScreen>
           controller: _familyCodeController,
           decoration: InputDecoration(
             labelText: 'Family Code',
-            labelStyle: const TextStyle(
-              color: ChorePalColors.darkBlue,
+            labelStyle: TextStyle(
+              color: _primaryColor,
               fontWeight: FontWeight.w500,
             ),
-            prefixIcon: isDarkMode
-                ? Container(
-                    decoration: const BoxDecoration(
-                      gradient: ChorePalColors.darkBlueGradient,
-                      shape: BoxShape.circle,
-                    ),
-                    margin: const EdgeInsets.all(8),
-                    child: const Icon(Icons.numbers,
-                        color: Colors.white, size: 20),
-                  )
-                : const Icon(Icons.numbers, color: ChorePalColors.darkBlue),
+            prefixIcon: Icon(Icons.numbers, color: _primaryColor),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -741,10 +767,18 @@ class _LoginScreenState extends State<LoginScreen>
           ),
           style: TextStyle(
             color: isDarkMode ? Colors.white : Colors.black87,
+            filled: true,
+            fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+          ),
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black87,
             fontSize: 20,
             letterSpacing: 8,
             fontWeight: FontWeight.bold,
           ),
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           maxLength: 6,
           textAlign: TextAlign.center,
@@ -769,6 +803,85 @@ class _LoginScreenState extends State<LoginScreen>
     return SizedBox(
       width: double.infinity,
       height: 50,
+      child: isDarkMode
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: ChorePalColors.darkBlueGradient,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: ChorePalColors.darkBlue.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: _isLoading ? null : _handleChildLogin,
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Login',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward),
+                        ],
+                      ),
+              ),
+            )
+          : ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ChorePalColors.darkBlue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 2,
+              ),
+              onPressed: _isLoading ? null : _handleChildLogin,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                  : const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.login),
+                        SizedBox(width: 8),
+                        Text(
+                          'Join Family',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+            ),
       child: isDarkMode
           ? Container(
               decoration: BoxDecoration(

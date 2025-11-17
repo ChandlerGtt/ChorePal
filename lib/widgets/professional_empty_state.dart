@@ -67,7 +67,7 @@ class ProfessionalEmptyState extends StatelessWidget {
           // Title
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w600,
               color: ChorePalColors.textPrimary,
@@ -79,7 +79,7 @@ class ProfessionalEmptyState extends StatelessWidget {
           // Subtitle
           Text(
             subtitle,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               color: ChorePalColors.textSecondary,
               height: 1.5,
@@ -121,7 +121,7 @@ class ProfessionalLoadingIndicator extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(
+          CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(ChorePalColors.skyBlue),
             strokeWidth: 3,
           ),
@@ -129,7 +129,7 @@ class ProfessionalLoadingIndicator extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               message!,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 color: ChorePalColors.textSecondary,
               ),

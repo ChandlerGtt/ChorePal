@@ -17,6 +17,8 @@ class FamilyLeaderboardScreen extends StatefulWidget {
   @override
   State<FamilyLeaderboardScreen> createState() =>
       _FamilyLeaderboardScreenState();
+  State<FamilyLeaderboardScreen> createState() =>
+      _FamilyLeaderboardScreenState();
 }
 
 class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
@@ -24,6 +26,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
   late AnimationController _slideController;
   late AnimationController _bounceController;
   late ConfettiController _confettiController;
+
 
   List<LeaderboardEntry> _leaderboardEntries = [];
   bool _isLoading = true;
@@ -33,19 +36,23 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
   void initState() {
     super.initState();
 
+
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+
 
     _bounceController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
+
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 3),
     );
+
 
     _loadLeaderboardData();
   }
@@ -66,12 +73,14 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
     final userState = Provider.of<UserState>(context, listen: false);
     final choreState = Provider.of<ChoreState>(context, listen: false);
 
+
     // Load family data if not already loaded
     await userState.loadFamilyData();
     await choreState.loadChores();
 
     // Calculate stats for each child
     Map<String, Map<String, dynamic>> choreStats = {};
+
 
     for (final child in userState.childrenInFamily) {
       choreStats[child.id] = await _calculateChildStats(child.id, choreState);
@@ -92,6 +101,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
     _slideController.forward();
     _bounceController.repeat(reverse: true);
 
+
     // Show confetti for the winner
     if (_leaderboardEntries.isNotEmpty) {
       Future.delayed(const Duration(milliseconds: 1000), () {
@@ -100,6 +110,8 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
     }
   }
 
+  Future<Map<String, dynamic>> _calculateChildStats(
+      String childId, ChoreState choreState) async {
   Future<Map<String, dynamic>> _calculateChildStats(
       String childId, ChoreState choreState) async {
     final now = DateTime.now();
@@ -111,12 +123,14 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
     int totalCompleted = 0;
     int streak = 0;
 
+
     final completedChores = choreState.completedChores
         .where((chore) => chore.completedBy == childId)
         .toList();
 
     for (final chore in completedChores) {
       totalCompleted++;
+
 
       if (chore.completedAt != null) {
         if (chore.completedAt!.isAfter(weekStart)) {
@@ -131,12 +145,19 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
     // Calculate streak (simplified - last 7 days)
     streak = _calculateStreak(completedChores);
 
+
     // Calculate weekly progress
     final weeklyAssigned = choreState.chores
         .where((chore) =>
             chore.assignedTo.contains(childId) &&
             chore.deadline.isAfter(weekStart))
+        .where((chore) =>
+            chore.assignedTo.contains(childId) &&
+            chore.deadline.isAfter(weekStart))
         .length;
+
+    final weeklyProgress =
+        weeklyAssigned > 0 ? weeklyCompleted / weeklyAssigned : 0.0;
 
     final weeklyProgress =
         weeklyAssigned > 0 ? weeklyCompleted / weeklyAssigned : 0.0;
@@ -154,8 +175,10 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
     // Simplified streak calculation - count consecutive days with completed chores
     if (completedChores.isEmpty) return 0;
 
+
     final now = DateTime.now();
     int streak = 0;
+
 
     for (int i = 0; i < 7; i++) {
       final checkDate = now.subtract(Duration(days: i));
@@ -165,7 +188,10 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
         return completedDate.year == checkDate.year &&
             completedDate.month == checkDate.month &&
             completedDate.day == checkDate.day;
+            completedDate.month == checkDate.month &&
+            completedDate.day == checkDate.day;
       });
+
 
       if (hasChoreOnDay) {
         streak++;
@@ -173,6 +199,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
         break;
       }
     }
+
 
     return streak;
   }
@@ -226,6 +253,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
             ),
           ),
 
+
           // Confetti
           Align(
             alignment: Alignment.topCenter,
@@ -258,6 +286,14 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
 
   String _getPeriodTitle() {
     switch (_selectedPeriod) {
+      case 'week':
+        return 'This Week';
+      case 'month':
+        return 'This Month';
+      case 'all-time':
+        return 'All Time';
+      default:
+        return 'This Week';
       case 'week':
         return 'This Week';
       case 'month':
@@ -301,6 +337,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
             child: _buildHeaderSection(),
           ),
 
+
           // Leaderboard list
           SliverPadding(
             padding: const EdgeInsets.all(16),
@@ -314,6 +351,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                     ).animate(CurvedAnimation(
                       parent: _slideController,
                       curve: Interval(
+                        index * 0.1,
                         index * 0.1,
                         (index * 0.1) + 0.7,
                         curve: Curves.easeOutBack,
@@ -338,6 +376,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
     if (_leaderboardEntries.isEmpty) return const SizedBox();
 
     final winner = _leaderboardEntries.first;
+
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -372,7 +411,9 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
             },
           ),
 
+
           const SizedBox(height: 16),
+
 
           // Winner info
           const Text(
@@ -467,7 +508,9 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                 // Rank badge
                 _buildRankBadge(entry.rank),
 
+
                 const SizedBox(width: 16),
+
 
                 // Avatar
                 Hero(
@@ -488,7 +531,9 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                   ),
                 ),
 
+
                 const SizedBox(width: 16),
+
 
                 // Child info
                 Expanded(
@@ -529,7 +574,9 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                         ],
                       ),
 
+
                       const SizedBox(height: 4),
+
 
                       // Badge
                       Container(
@@ -544,6 +591,9 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                         child: Text(
                           entry.badge,
                           style: TextStyle(
+                            color: entry.rank <= 3
+                                ? Colors.white
+                                : entry.badgeColor,
                             color: entry.rank <= 3
                                 ? Colors.white
                                 : entry.badgeColor,
@@ -600,6 +650,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
     Color badgeColor;
     Widget content;
 
+
     if (rank == 1) {
       badgeColor = Colors.amber;
       content = const Icon(Icons.emoji_events, color: Colors.white, size: 20);
@@ -620,7 +671,13 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
               color: Colors.grey.shade700,
               fontWeight: FontWeight.bold,
               fontSize: 14));
+      content = Text('$rank',
+          style: TextStyle(
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.bold,
+              fontSize: 14));
     }
+
 
     return Container(
       width: 36,
@@ -628,6 +685,15 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
       decoration: BoxDecoration(
         color: badgeColor,
         shape: BoxShape.circle,
+        boxShadow: rank <= 3
+            ? [
+                BoxShadow(
+                  color: badgeColor.withOpacity(0.4),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ]
+            : null,
         boxShadow: rank <= 3
             ? [
                 BoxShadow(

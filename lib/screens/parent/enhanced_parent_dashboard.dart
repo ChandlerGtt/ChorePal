@@ -629,7 +629,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                   ),
                   child: Text(
                     familyCode,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 6,
@@ -701,7 +701,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                     color: ChorePalColors.sunshineOrange.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.pending_actions,
                     color: ChorePalColors.sunshineOrange,
                     size: 24,
@@ -712,7 +712,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Awaiting Your Approval',
                         style: TextStyle(
                           fontSize: 16,
@@ -723,7 +723,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       const SizedBox(height: 4),
                       Text(
                         '${pendingApprovalChores.length} chore${pendingApprovalChores.length > 1 ? 's' : ''} need approval',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           color: ChorePalColors.textSecondary,
                         ),
@@ -1220,7 +1220,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Dashboard header
-          const Text(
+          Text(
             'Family Dashboard',
             style: TextStyle(
               fontSize: 28,
@@ -1230,7 +1230,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Overview of your family\'s activity',
             style: TextStyle(
               fontSize: 15,
@@ -1392,7 +1392,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         value: value,
                         minHeight: 20,
                         backgroundColor: Colors.white.withOpacity(0.2),
-                        valueColor: const AlwaysStoppedAnimation<Color>(
+                        valueColor: AlwaysStoppedAnimation<Color>(
                           ChorePalColors.lavenderPurple,
                         ),
                       );
@@ -1404,7 +1404,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
           ),
           const SizedBox(height: 32),
           // Children progress section
-          const Text(
+          Text(
             'Children Progress',
             style: TextStyle(
               fontSize: 22,

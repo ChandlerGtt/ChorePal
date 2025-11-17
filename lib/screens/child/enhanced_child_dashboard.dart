@@ -15,6 +15,10 @@ import '../settings_screen.dart';
 import '../../widgets/professional_empty_state.dart';
 import '../../widgets/modern_chore_card.dart';
 import '../../utils/chorepal_colors.dart';
+import '../settings_screen.dart';
+import '../../widgets/professional_empty_state.dart';
+import '../../widgets/modern_chore_card.dart';
+import '../../utils/chorepal_colors.dart';
 
 class EnhancedChildDashboard extends StatefulWidget {
   final String childId;
@@ -346,9 +350,9 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
             .toList();
 
         if (myChores.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
-              padding: EdgeInsets.all(32.0),
+              padding: const EdgeInsets.all(32.0),
               child: ProfessionalEmptyState(
                 icon: Icons.celebration,
                 title: 'All Caught Up!',
@@ -425,9 +429,9 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
         }
 
         if (rewardState.rewards.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
-              padding: EdgeInsets.all(32.0),
+              padding: const EdgeInsets.all(32.0),
               child: ProfessionalEmptyState(
                 icon: Icons.card_giftcard_outlined,
                 title: 'No Rewards Available',

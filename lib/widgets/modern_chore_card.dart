@@ -57,16 +57,16 @@ class ModernChoreCard extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.priority_high,
                         size: 14,
                         color: Colors.white,
                       ),
-                      SizedBox(width: 4),
-                      Text(
+                      const SizedBox(width: 4),
+                      const Text(
                         'HIGH',
                         style: TextStyle(
                           color: Colors.white,
@@ -157,7 +157,7 @@ class ModernChoreCard extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.star,
                         size: 16,
                         color: ChorePalColors.sunshineOrange,
@@ -165,7 +165,7 @@ class ModernChoreCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         '${chore.pointValue} pts',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: ChorePalColors.sunshineOrange,
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
@@ -313,8 +313,8 @@ class ModernChoreCard extends StatelessWidget {
           child: InkWell(
             onTap: () => onAssign!(chore),
             borderRadius: BorderRadius.circular(12),
-            child: const Padding(
-              padding: EdgeInsets.all(12),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
               child: Icon(
                 Icons.person_add,
                 color: ChorePalColors.skyBlue,
@@ -333,7 +333,7 @@ class ModernChoreCard extends StatelessWidget {
           color: ChorePalColors.grassGreen.withOpacity(0.2),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.check_circle,
           color: ChorePalColors.grassGreen,
           size: 20,
