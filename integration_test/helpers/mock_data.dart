@@ -1,16 +1,14 @@
 /// Mock data and test credentials for integration tests
 
 class TestCredentials {
-static const String adultEmail = 'NewUser@example.com';
-static const String adultPassword = 'Password!1234';
+  static const String adultEmail = 'NewUser@example.com';
+  static const String adultPassword = 'Password!1234';
   static const String adultName = 'NewUser';
-  //824805//
-  
+
   // Child credentials can be added when child login is implemented
   static const String childEmail = 'child@example.com';
   static const String childPassword = 'childpass123';
   static const String childName = 'childuser';
-
 }
 
 class TestData {
@@ -23,3 +21,4 @@ class TestData {
     'Rewards',
   ];
 }
+  //824805//

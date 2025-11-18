@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:chore_pal/main.dart' as app;
 import '../helpers/test_helpers.dart';
 import '../helpers/mock_data.dart';
@@ -12,6 +13,15 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Adult Tab Navigation Tests', () {
+    setUp(() async {
+      try {
+        await FirebaseAuth.instance.signOut();
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        // Ignore errors if already signed out
+      }
+    });
+
     testWidgets('Can navigate between all adult tabs without issues',
         (WidgetTester tester) async {
       // Launch the app
