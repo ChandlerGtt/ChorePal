@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/notification_service.dart';
 import '../services/email_service.dart';
 import '../services/sms_service.dart';
+import '../services/fcm_notification_service.dart';
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
 import '../models/user.dart';
@@ -104,16 +105,37 @@ class NotificationHelper {
       updatedUser = targetUser; // Fallback to current user
     }
 
-    // Send push notification if enabled
+    // Send FCM push notification if enabled
     if (updatedUser.pushNotificationsEnabled) {
       try {
-        await _notificationService.showNotification(
-          id: DateTime.now().millisecondsSinceEpoch % 100000,
+        // Send FCM notification via Cloud Function (for cross-device delivery)
+        final fcmSuccess = await FCMNotificationService.sendNotification(
+          userId: updatedUser.id,
           title: title,
           body: body,
         );
+        
+        // Also show local notification as fallback/for current device
+        // This ensures the notification appears even if FCM fails
+        if (!fcmSuccess) {
+          await _notificationService.showNotification(
+            id: DateTime.now().millisecondsSinceEpoch % 100000,
+            title: title,
+            body: body,
+          );
+        }
       } catch (e) {
         print('Error sending push notification: $e');
+        // Fallback to local notification
+        try {
+          await _notificationService.showNotification(
+            id: DateTime.now().millisecondsSinceEpoch % 100000,
+            title: title,
+            body: body,
+          );
+        } catch (localError) {
+          print('Error showing local notification fallback: $localError');
+        }
       }
     }
 

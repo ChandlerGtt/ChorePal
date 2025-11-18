@@ -1,8 +1,8 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:ChorePal/services/firestore_service.dart';
-import 'package:ChorePal/services/notification_service.dart';
+import 'firestore_service.dart';
+import 'notification_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -49,8 +49,12 @@ class AuthService {
   Future<UserCredential> registerWithEmailAndPassword(
       String email, String password) async {
     try {
-      return await _auth.createUserWithEmailAndPassword(
+      final credential = await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
+      if (credential.user != null) {
+        await _updateFcmToken(credential.user!.uid);
+      }
+      return credential;
     } on FirebaseAuthException catch (e) {
       throw _getFirebaseAuthException(e);
     } catch (e) {
@@ -61,6 +65,11 @@ class AuthService {
   // Sign out
   Future<void> signOut() async {
     try {
+      final userId = _auth.currentUser?.uid;
+      if (userId != null) {
+        // Clear FCM token from Firestore
+        await _notificationService.clearFcmTokenForUser(userId);
+      }
       await _auth.signOut();
     } catch (e) {
       throw Exception('Failed to sign out. Please try again.');
@@ -70,7 +79,11 @@ class AuthService {
   // Sign in anonymously
   Future<UserCredential> signInAnonymously() async {
     try {
-      return await _auth.signInAnonymously();
+      final credential = await _auth.signInAnonymously();
+      if (credential.user != null) {
+        await _updateFcmToken(credential.user!.uid);
+      }
+      return credential;
     } on FirebaseAuthException catch (e) {
       throw _getFirebaseAuthException(e);
     } catch (e) {
@@ -120,10 +133,7 @@ class AuthService {
   // Update FCM token
   Future<void> _updateFcmToken(String userId) async {
     try {
-      final fcmToken = await _notificationService.getFcmToken();
-      if (fcmToken != null) {
-        await _firestoreService.updateUser(userId, {'fcmToken': fcmToken});
-      }
+      await _notificationService.storeFcmTokenForUser(userId);
     } catch (e) {
       // Handle errors silently
       print('Error updating FCM token: $e');

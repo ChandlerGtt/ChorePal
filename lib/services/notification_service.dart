@@ -1,8 +1,8 @@
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'firestore_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -12,7 +12,10 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  final FirestoreService _firestoreService = FirestoreService();
 
+  // Callback for notification taps (for deep linking)
+  Function(RemoteMessage)? onNotificationTap;
 
   // Initialize the notification service
   Future<void> initialize() async {
@@ -41,8 +44,24 @@ class NotificationService {
       await _firebaseMessaging.requestPermission();
       final fcmToken = await _firebaseMessaging.getToken();
       print('FCM Token: $fcmToken');
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
+      // Store token in Firestore if user is logged in
+      await _storeFcmTokenIfLoggedIn(fcmToken);
+
+      // Set up foreground message handler
+      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+
+      // Set up notification tap handlers
+      FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+
+      // Check if app was opened from a notification
+      final initialMessage = await _firebaseMessaging.getInitialMessage();
+      if (initialMessage != null) {
+        _handleNotificationTap(initialMessage);
+      }
+
+      // Listen for token refresh
+      _firebaseMessaging.onTokenRefresh.listen(_handleTokenRefresh);
 
       print('Notification service initialized successfully');
     } catch (e) {
@@ -200,8 +219,75 @@ class NotificationService {
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
   }
-}
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Handling a background message: ${message.messageId}');
+  // Handle foreground messages (when app is open)
+  Future<void> _handleForegroundMessage(RemoteMessage message) async {
+    print('Handling a foreground message: ${message.messageId}');
+
+    // Show local notification when app is in foreground
+    await showNotification(
+      id: message.hashCode,
+      title: message.notification?.title ?? 'ChorePal',
+      body: message.notification?.body ?? '',
+    );
+  }
+
+  // Handle notification tap (deep linking)
+  void _handleNotificationTap(RemoteMessage message) {
+    print('Notification tapped: ${message.messageId}');
+    print('Notification data: ${message.data}');
+
+    // Call the callback if set (for navigation)
+    if (onNotificationTap != null) {
+      onNotificationTap!(message);
+    }
+  }
+
+  // Handle token refresh
+  Future<void> _handleTokenRefresh(String newToken) async {
+    print('FCM Token refreshed: $newToken');
+    await _storeFcmTokenIfLoggedIn(newToken);
+  }
+
+  // Store FCM token in Firestore if user is logged in
+  Future<void> _storeFcmTokenIfLoggedIn(String? token) async {
+    if (token == null) return;
+
+    try {
+      // Get current user ID from FirestoreService
+      // We'll need to pass userId or get it from auth
+      // For now, we'll store it when we have the userId
+      // This will be called from auth_service after login
+    } catch (e) {
+      print('Error storing FCM token: $e');
+    }
+  }
+
+  // Public method to store FCM token (called from auth_service)
+  Future<void> storeFcmTokenForUser(String userId) async {
+    try {
+      final token = await getFcmToken();
+      if (token != null) {
+        await _firestoreService.updateUser(userId, {
+          'fcmToken': token,
+          'fcmTokenUpdatedAt': DateTime.now().toIso8601String(),
+        });
+        print('FCM token stored for user: $userId');
+      }
+    } catch (e) {
+      print('Error storing FCM token for user: $e');
+    }
+  }
+
+  // Clear FCM token from Firestore
+  Future<void> clearFcmTokenForUser(String userId) async {
+    try {
+      await _firestoreService.updateUser(userId, {
+        'fcmToken': null,
+      });
+      print('FCM token cleared for user: $userId');
+    } catch (e) {
+      print('Error clearing FCM token: $e');
+    }
+  }
 }

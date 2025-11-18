@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'screens/login_screen.dart';
 import 'models/chore_state.dart';
@@ -11,6 +12,7 @@ import 'models/reward_state.dart';
 import 'models/user_state.dart';
 import 'services/notification_service.dart';
 import 'services/auth_service.dart';
+import 'services/fcm_background_handler.dart';
 import 'widgets/auth_wrapper.dart';
 import 'widgets/splash_screen.dart';
 import 'services/theme_service.dart';
@@ -18,6 +20,10 @@ import 'services/theme_service.dart';
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Register background message handler (must be top-level, before runApp)
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  
   try {
     // Initialize Firebase
     await Firebase.initializeApp(
