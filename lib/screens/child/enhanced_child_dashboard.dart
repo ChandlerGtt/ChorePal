@@ -142,131 +142,150 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
                 .firstOrNull;
           }
 
-          return DashboardHeader(
-            user: currentUser,
-            actions: [
-              PopupMenuButton<String>(
-                tooltip: 'Menu',
-                icon: const Icon(
-                  Icons.more_vert,
-                  color: Colors.white,
-                ),
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF2D2D2D)
-                    : Colors.white,
-                onSelected: (value) {
-                  if (value == 'chores') {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            ChoreHistoryScreen(childId: widget.childId),
-                      ),
-                    );
-                  } else if (value == 'rewards') {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            RewardHistoryScreen(childId: widget.childId),
-                      ),
-                    );
-                  } else if (value == 'settings') {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsScreen(),
-                      ),
-                    );
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'chores',
-                    child: Row(
-                      children: [
-                        Icon(Icons.check_circle, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text('My Completed Chores'),
-                      ],
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = constraints.maxWidth;
+              final isSmallScreen = screenWidth < 400;
+              
+              return DashboardHeader(
+                user: currentUser,
+                actions: [
+                  PopupMenuButton<String>(
+                    tooltip: 'Menu',
+                    icon: const Icon(
+                      Icons.more_vert,
+                      color: Colors.white,
                     ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'rewards',
-                    child: Row(
-                      children: [
-                        Icon(Icons.card_giftcard, color: Colors.purple),
-                        SizedBox(width: 8),
-                        Text('My Redeemed Rewards'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'settings',
-                    child: Row(
-                      children: [
-                        Icon(Icons.settings, color: Colors.blue),
-                        SizedBox(width: 8),
-                        Text('Settings'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.settings, color: Colors.white),
-                tooltip: 'Settings',
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
-                    ),
-                  );
-                },
-              ),
-              Container(
-                margin: const EdgeInsets.all(8.0),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.amber.shade300, Colors.amber.shade500],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.amber.withOpacity(0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: IntrinsicHeight(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        height: 18,
-                        width: 18,
-                        child: const Icon(
-                          Icons.stars,
-                          color: Colors.white,
-                          size: 18,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF2D2D2D)
+                        : Colors.white,
+                    onSelected: (value) {
+                      if (value == 'chores') {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ChoreHistoryScreen(childId: widget.childId),
+                          ),
+                        );
+                      } else if (value == 'rewards') {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                RewardHistoryScreen(childId: widget.childId),
+                          ),
+                        );
+                      } else if (value == 'settings') {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsScreen(),
+                          ),
+                        );
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'chores',
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text('My Completed Chores'),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '$_points Points',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          height: 1.2,
+                      const PopupMenuItem(
+                        value: 'rewards',
+                        child: Row(
+                          children: [
+                            Icon(Icons.card_giftcard, color: Colors.purple),
+                            SizedBox(width: 8),
+                            Text('My Redeemed Rewards'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'settings',
+                        child: Row(
+                          children: [
+                            Icon(Icons.settings, color: Colors.blue),
+                            SizedBox(width: 8),
+                            Text('Settings'),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ],
+                  IconButton(
+                    icon: const Icon(Icons.settings, color: Colors.white),
+                    tooltip: 'Settings',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  Flexible(
+                    child: Container(
+                      margin: EdgeInsets.only(
+                        left: screenWidth * 0.01,
+                        right: screenWidth * 0.02,
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? screenWidth * 0.02 : screenWidth * 0.025,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.amber.shade300, Colors.amber.shade500],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.amber.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              height: isSmallScreen ? 14 : 16,
+                              width: isSmallScreen ? 14 : 16,
+                              child: Icon(
+                                Icons.stars,
+                                color: Colors.white,
+                                size: isSmallScreen ? 14 : 16,
+                              ),
+                            ),
+                            SizedBox(width: isSmallScreen ? 4 : 5),
+                            Flexible(
+                              child: Text(
+                                isSmallScreen ? '$_points' : '$_points Points',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isSmallScreen ? 12 : 13,
+                                  height: 1.0,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
