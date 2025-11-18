@@ -1207,9 +1207,7 @@ class _LoginScreenState extends State<LoginScreen>
 
       // User is now logged in and will stay logged in when they reopen the app
       // Navigate to dashboard with state initialization
-      if (mounted) {
-        await _initializeStateAndNavigateToParentDashboard(familyRef.id);
-      }
+
     } catch (e) {
       rethrow; // Re-throw to be caught by the outer catch block
     }
@@ -1241,35 +1239,9 @@ class _LoginScreenState extends State<LoginScreen>
       throw Exception('This account is not registered as a parent');
     }
 
-    if (mounted) {
-      await _initializeStateAndNavigateToParentDashboard(userData['familyId']);
-    }
+
   }
 
-  /// Initializes state providers and navigates to parent dashboard
-  Future<void> _initializeStateAndNavigateToParentDashboard(
-      String familyId) async {
-    // Initialize data for state providers
-    final choreState = Provider.of<ChoreState>(context, listen: false);
-    choreState.setFamilyId(familyId);
-    await choreState.loadChores();
-
-    final rewardState = Provider.of<RewardState>(context, listen: false);
-    rewardState.setFamilyId(familyId);
-    await rewardState.loadRewards();
-
-    // Set user context for notifications
-    final userState = Provider.of<UserState>(context, listen: false);
-    await userState.loadCurrentUser();
-    if (userState.currentUser != null) {
-      NotificationHelper.setCurrentUser(userState.currentUser);
-    }
-
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const EnhancedParentDashboard()),
-    );
-  }
 
   /// Handles child login
   Future<void> _handleChildLogin() async {
@@ -1357,7 +1329,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
           );
 
-          await _initializeStateAndNavigateToChildDashboard(familyId, childId);
+         
         }
       }
     } catch (e) {
@@ -1377,31 +1349,5 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-  /// Initializes state providers and navigates to child dashboard
-  Future<void> _initializeStateAndNavigateToChildDashboard(
-      String familyId, String childId) async {
-    // Initialize data for state providers
-    final choreState = Provider.of<ChoreState>(context, listen: false);
-    choreState.setFamilyId(familyId);
-    await choreState.loadChores();
 
-    final rewardState = Provider.of<RewardState>(context, listen: false);
-    rewardState.setFamilyId(familyId);
-    await rewardState.loadRewards();
-
-    // Set user context for notifications
-    final userState = Provider.of<UserState>(context, listen: false);
-    await userState.loadCurrentUser();
-    if (userState.currentUser != null) {
-      NotificationHelper.setCurrentUser(userState.currentUser);
-    }
-
-    // Navigate to child dashboard
-    if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => EnhancedChildDashboard(childId: childId),
-      ),
-    );
-  }
 }
