@@ -591,6 +591,7 @@ class FirestoreService {
     bool? emailNotificationsEnabled,
     bool? smsNotificationsEnabled,
     String? phoneNumber,
+    String? email,
   }) async {
     try {
       Map<String, dynamic> updates = {};
@@ -618,11 +619,49 @@ class FirestoreService {
         updates['phoneNumber'] = phoneNumber.trim();
       }
 
+      if (email != null) {
+        // Validate email format if provided
+        final trimmedEmail = email.trim();
+        if (trimmedEmail.isNotEmpty) {
+          final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+          if (!emailRegex.hasMatch(trimmedEmail)) {
+            throw Exception('Please enter a valid email address');
+          }
+          updates['email'] = trimmedEmail;
+          print('Adding email to updates: $trimmedEmail');
+        } else {
+          // Explicitly delete the email field to clear it
+          updates['email'] = FieldValue.delete();
+          print('Adding email delete to updates');
+        }
+      } else {
+        print('Email parameter is null, skipping email update');
+      }
+      
+      // Debug: Print what we're updating
+      print('Updating user $userId with: $updates');
+
       if (updates.isNotEmpty) {
-        await users.doc(userId).update(updates);
+        try {
+          await users.doc(userId).update(updates);
+          print('Successfully updated user $userId');
+          
+          // Verify the update
+          final doc = await users.doc(userId).get();
+          if (doc.exists) {
+            final data = doc.data() as Map<String, dynamic>?;
+            print('User document after update: email = ${data?['email']}');
+          }
+        } catch (updateError) {
+          print('Error updating document: $updateError');
+          rethrow;
+        }
+      } else {
+        print('No updates to apply for user $userId');
       }
     } catch (e) {
-      if (e.toString().contains('Phone number is required')) {
+      if (e.toString().contains('Phone number is required') ||
+          e.toString().contains('valid email')) {
         rethrow;
       }
       throw Exception(

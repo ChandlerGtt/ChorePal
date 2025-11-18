@@ -1,7 +1,9 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/notification_service.dart';
 import '../services/email_service.dart';
 import '../services/sms_service.dart';
 import '../services/firestore_service.dart';
+import '../services/auth_service.dart';
 import '../models/user.dart';
 
 class NotificationHelper {
@@ -21,6 +23,41 @@ class NotificationHelper {
     return _currentUser;
   }
 
+  // Try to load current user from Firestore if not set
+  static Future<User?> _tryLoadCurrentUser() async {
+    try {
+      final authService = AuthService();
+      final authUser = authService.currentUser;
+      if (authUser != null) {
+        // Check if this is a child user (anonymous auth with stored child ID)
+        final prefs = await SharedPreferences.getInstance();
+        final storedChildId = prefs.getString('child_user_id');
+        final storedFamilyId = prefs.getString('child_family_id');
+
+        String? actualUserId;
+        
+        if (storedChildId != null && storedFamilyId != null) {
+          // This is a child user - use the stored child ID
+          actualUserId = storedChildId;
+        } else {
+          // This is a parent user - use the auth UID directly
+          actualUserId = authUser.uid;
+        }
+
+        final userDoc = await _firestoreService.users.doc(actualUserId).get();
+        if (userDoc.exists) {
+          final userData = userDoc.data() as Map<String, dynamic>;
+          final user = User.fromFirestore(actualUserId, userData);
+          _currentUser = user; // Update context
+          return user;
+        }
+      }
+    } catch (e) {
+      print('Error trying to load current user: $e');
+    }
+    return null;
+  }
+
   // Helper method to send multi-channel notifications
   static Future<void> _sendMultiChannelNotification({
     required String title,
@@ -28,15 +65,43 @@ class NotificationHelper {
     required User? user,
     String? emailSubject,
   }) async {
-    if (user == null) return;
+    // If user is null, try to get it from current context
+    User? targetUser = user ?? _currentUser;
+    
+    // If still null, try to load from UserState via Firestore
+    if (targetUser == null) {
+      print('Warning: No user context available for notification. Attempting to load user...');
+      try {
+        // Try to get user from auth service
+        final authService = AuthService();
+        final authUser = authService.currentUser;
+        if (authUser != null) {
+          // Try to load user from Firestore
+          final userDoc = await _firestoreService.users.doc(authUser.uid).get();
+          if (userDoc.exists) {
+            final userData = userDoc.data() as Map<String, dynamic>;
+            targetUser = User.fromFirestore(authUser.uid, userData);
+            // Update current user context for future notifications
+            _currentUser = targetUser;
+          }
+        }
+      } catch (e) {
+        print('Error loading user for notification: $e');
+      }
+    }
+    
+    if (targetUser == null) {
+      print('Error: Cannot send notification - no user context available');
+      return;
+    }
 
     // Refresh user preferences from Firestore
     User? updatedUser;
     try {
-      updatedUser = await _firestoreService.getUserById(user.id);
+      updatedUser = await _firestoreService.getUserById(targetUser.id);
     } catch (e) {
       print('Error fetching user preferences: $e');
-      updatedUser = user; // Fallback to current user
+      updatedUser = targetUser; // Fallback to current user
     }
 
     // Send push notification if enabled
@@ -71,9 +136,8 @@ class NotificationHelper {
       String? phoneNumber;
       if (updatedUser is Parent && updatedUser.phoneNumber != null) {
         phoneNumber = updatedUser.phoneNumber;
-      } else if (updatedUser is Child && updatedUser.phoneNumber != null) {
-        phoneNumber = updatedUser.phoneNumber;
       }
+      // Children don't have phone numbers
 
       if (phoneNumber != null && phoneNumber.isNotEmpty) {
         try {
@@ -120,38 +184,44 @@ class NotificationHelper {
   // Show notification when child completes a chore (for parent)
   static Future<void> showChoreCompletedByChildNotification(
       String childName, String choreName) async {
+    // Get current user (will try to load if null)
+    final user = _currentUser ?? await _tryLoadCurrentUser();
+    
     // Only show this notification to parents
-    if (_currentUser != null && _currentUser!.isParent) {
+    if (user != null && user.isParent) {
       String body =
           '$childName completed "$choreName" and is waiting for your approval.';
 
       await _sendMultiChannelNotification(
         title: 'Chore Completed! 📋',
         body: body,
-        user: _currentUser,
+        user: user,
       );
     } else {
       print(
-          'Notification skipped: Child completed chore notification should only go to parents');
+          'Notification skipped: Child completed chore notification should only go to parents (current user: ${user?.name ?? "null"}, isParent: ${user?.isParent ?? false})');
     }
   }
 
   // Show notification when parent approves a chore (for child)
   static Future<void> showChoreApprovedNotification(
       String choreName, int points) async {
+    // Get current user (will try to load if null)
+    final user = _currentUser ?? await _tryLoadCurrentUser();
+    
     // Only show this notification to children
-    if (_currentUser != null && !_currentUser!.isParent) {
+    if (user != null && !user.isParent) {
       String body =
           'Great job! "$choreName" was approved. You earned $points points!';
 
       await _sendMultiChannelNotification(
         title: 'Chore Approved! ✅',
         body: body,
-        user: _currentUser,
+        user: user,
       );
     } else {
       print(
-          'Notification skipped: Chore approved notification should only go to children');
+          'Notification skipped: Chore approved notification should only go to children (current user: ${user?.name ?? "null"}, isParent: ${user?.isParent ?? true})');
     }
   }
 
@@ -160,8 +230,11 @@ class NotificationHelper {
   // Daily chore reminders
   static Future<void> showDailyReminder(
       String childName, int pendingCount) async {
+    // Get current user (will try to load if null)
+    final user = _currentUser ?? await _tryLoadCurrentUser();
+    
     // Only show this notification to children
-    if (_currentUser != null && !_currentUser!.isParent) {
+    if (user != null && !user.isParent) {
       String body = pendingCount > 0
           ? 'You have $pendingCount chore${pendingCount > 1 ? 's' : ''} to complete today!'
           : 'Great job! All your chores are done for today! 🎉';
@@ -169,7 +242,7 @@ class NotificationHelper {
       await _sendMultiChannelNotification(
         title: 'Daily Chore Check-in 📋',
         body: body,
-        user: _currentUser,
+        user: user,
       );
     }
   }
@@ -177,8 +250,11 @@ class NotificationHelper {
   // Overdue chore alerts
   static Future<void> showOverdueChoreAlert(
       String childName, List<String> overdueChores) async {
+    // Get current user (will try to load if null)
+    final user = _currentUser ?? await _tryLoadCurrentUser();
+    
     // Only show this notification to children
-    if (_currentUser != null && !_currentUser!.isParent) {
+    if (user != null && !user.isParent) {
       String choreList = overdueChores.take(3).join(', ');
       if (overdueChores.length > 3) {
         choreList += ' and ${overdueChores.length - 3} more';
@@ -187,7 +263,7 @@ class NotificationHelper {
       await _sendMultiChannelNotification(
         title: 'Overdue Chores Alert ⚠️',
         body: 'You have overdue chores: $choreList',
-        user: _currentUser,
+        user: user,
       );
     }
   }
@@ -195,8 +271,11 @@ class NotificationHelper {
   // Streak achievements
   static Future<void> showStreakAchievement(
       String childName, int streakDays) async {
+    // Get current user (will try to load if null)
+    final user = _currentUser ?? await _tryLoadCurrentUser();
+    
     // Only show this notification to children
-    if (_currentUser != null && !_currentUser!.isParent) {
+    if (user != null && !user.isParent) {
       String emoji = streakDays >= 30
           ? '🏆'
           : streakDays >= 14
@@ -211,7 +290,7 @@ class NotificationHelper {
       await _sendMultiChannelNotification(
         title: 'Streak Achievement $emoji',
         body: message,
-        user: _currentUser,
+        user: user,
       );
     }
   }
@@ -219,8 +298,11 @@ class NotificationHelper {
   // Weekly progress summary
   static Future<void> showWeeklySummary(String childName, int completedChores,
       int totalChores, int pointsEarned) async {
+    // Get current user (will try to load if null)
+    final user = _currentUser ?? await _tryLoadCurrentUser();
+    
     // Only show this notification to children
-    if (_currentUser != null && !_currentUser!.isParent) {
+    if (user != null && !user.isParent) {
       double percentage =
           totalChores > 0 ? (completedChores / totalChores * 100) : 0;
       String performance = percentage >= 90
@@ -235,7 +317,7 @@ class NotificationHelper {
       await _sendMultiChannelNotification(
         title: 'Weekly Summary 📊',
         body: body,
-        user: _currentUser,
+        user: user,
         emailSubject: 'ChorePal Weekly Summary',
       );
     }
@@ -244,8 +326,11 @@ class NotificationHelper {
   // Reward availability alerts
   static Future<void> showRewardAvailable(String childName, String rewardName,
       int pointsNeeded, int currentPoints) async {
+    // Get current user (will try to load if null)
+    final user = _currentUser ?? await _tryLoadCurrentUser();
+    
     // Only show this notification to children
-    if (_currentUser != null && !_currentUser!.isParent) {
+    if (user != null && !user.isParent) {
       int pointsToGo = pointsNeeded - currentPoints;
       String body = pointsToGo <= 0
           ? 'You can now afford "$rewardName"! Redeem it?'
@@ -254,7 +339,7 @@ class NotificationHelper {
       await _sendMultiChannelNotification(
         title: 'Reward Available! 🎁',
         body: body,
-        user: _currentUser,
+        user: user,
       );
     }
   }
@@ -262,42 +347,51 @@ class NotificationHelper {
   // Family coordination notifications
   static Future<void> showNewChoreAssigned(
       String childName, String choreName) async {
+    // Get current user (will try to load if null)
+    final user = _currentUser ?? await _tryLoadCurrentUser();
+    
     // Only show this notification to children
-    if (_currentUser != null && !_currentUser!.isParent) {
+    if (user != null && !user.isParent) {
       await _sendMultiChannelNotification(
         title: 'New Chore Assigned 📝',
         body: 'You have a new chore: "$choreName"',
-        user: _currentUser,
+        user: user,
       );
     }
   }
 
   static Future<void> showChoreApprovalNeeded(
       String parentName, String childName, String choreName) async {
+    // Get current user (will try to load if null)
+    final user = _currentUser ?? await _tryLoadCurrentUser();
+    
     // Only show this notification to parents
-    if (_currentUser != null && _currentUser!.isParent) {
+    if (user != null && user.isParent) {
       String body =
           '$childName completed "$choreName" and is waiting for your approval.';
 
       await _sendMultiChannelNotification(
         title: 'Approval Needed 👨‍👩‍👧‍👦',
         body: body,
-        user: _currentUser,
+        user: user,
       );
     }
   }
 
   // Streak at risk notification
   static Future<void> showStreakAtRisk(String childName, int streakDays) async {
+    // Get current user (will try to load if null)
+    final user = _currentUser ?? await _tryLoadCurrentUser();
+    
     // Only show this notification to children
-    if (_currentUser != null && !_currentUser!.isParent) {
+    if (user != null && !user.isParent) {
       String body =
           'Your $streakDays-day streak is at risk! Complete a chore today to keep it going!';
 
       await _sendMultiChannelNotification(
         title: 'Streak at Risk! 🔥',
         body: body,
-        user: _currentUser,
+        user: user,
       );
     }
   }

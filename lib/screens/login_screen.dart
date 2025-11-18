@@ -1,7 +1,7 @@
 // lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../models/chore_state.dart';
@@ -1128,6 +1128,12 @@ class _LoginScreenState extends State<LoginScreen>
   /// Handles parent registration
   Future<void> _handleParentRegistration() async {
     try {
+      // Clear any child account data from SharedPreferences
+      // This ensures parent registration doesn't use stale child data
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('child_user_id');
+      await prefs.remove('child_family_id');
+      
       // Register new parent (automatically signs the user in)
       final credential = await _authService.registerWithEmailAndPassword(
         _emailController.text.trim(),
@@ -1217,6 +1223,12 @@ class _LoginScreenState extends State<LoginScreen>
       _passwordController.text.trim(),
     );
 
+    // Clear any child account data from SharedPreferences
+    // This ensures parent login doesn't use stale child data
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('child_user_id');
+    await prefs.remove('child_family_id');
+
     // Get user data
     final userDoc =
         await _firestoreService.users.doc(credential.user!.uid).get();
@@ -1293,38 +1305,45 @@ class _LoginScreenState extends State<LoginScreen>
             childName, familyId);
 
         String childId;
+        
         if (existingChild != null) {
-          // Child already exists, use their existing ID
+          // Child already exists - use their existing ID
           childId = existingChild.id;
+          
+          // Sign in anonymously for Firebase Auth persistence
+          // The child ID is their Firestore document ID, not the auth UID
+          try {
+            await _authService.signInAnonymously();
+          } catch (e) {
+            // If anonymous sign-in fails, continue anyway
+            // The child can still use the app, just without Firebase Auth persistence
+            print('Anonymous sign-in failed for child: $e');
+          }
         } else {
           // Create a new child
-
-          // Create a Firebase Auth account for the child
-          // Use a unique email format for children with timestamp to ensure uniqueness
-          final timestamp = DateTime.now().millisecondsSinceEpoch;
-          final childEmail =
-              '${familyId}_${childName}_$timestamp@chorepal.child';
-          final childPassword = 'child_${familyId}_${childName}_$timestamp';
-
-          UserCredential credential;
+          // Generate a unique ID for the child (using Firestore document ID)
+          // First sign in anonymously to get a Firebase Auth session for persistence
           try {
-            // Try to sign in with existing credentials first
-            credential = await _authService.signInWithEmailAndPassword(
-                childEmail, childPassword);
+            await _authService.signInAnonymously();
           } catch (e) {
-            // If sign in fails, create a new account
-            credential = await _authService.registerWithEmailAndPassword(
-                childEmail, childPassword);
+            print('Anonymous sign-in failed: $e');
           }
-
-          // Use the Firebase Auth UID as the child ID
-          childId = credential.user!.uid;
-
+          
+          // Create a new document in Firestore - Firestore will generate the ID
+          final childDocRef = _firestoreService.users.doc();
+          childId = childDocRef.id;
+          
           // Create the child profile in Firestore
           await _firestoreService.createChildProfile(
               childId, childName, familyId);
           await _firestoreService.addChildToFamily(familyId, childId);
         }
+
+        // Store the child ID in SharedPreferences for persistence
+        // This allows AuthWrapper to find the child document even with anonymous auth
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('child_user_id', childId);
+        await prefs.setString('child_family_id', familyId);
 
         if (mounted) {
           final message = existingChild != null

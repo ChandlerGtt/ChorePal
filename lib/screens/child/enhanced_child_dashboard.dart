@@ -239,19 +239,32 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
                     ),
                   ],
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.stars, color: Colors.white, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$_points Points',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                child: IntrinsicHeight(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: const Icon(
+                          Icons.stars,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Text(
+                        '$_points Points',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               IconButton(

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../widgets/notification_helper.dart';
 import 'user.dart';
 
 class UserState extends ChangeNotifier {
@@ -42,17 +44,55 @@ class UserState extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final uid = _authService.currentUser!.uid;
-      final userDoc = await _firestoreService.users.doc(uid).get();
+      // Check if this is a child user (anonymous auth with stored child ID)
+      final prefs = await SharedPreferences.getInstance();
+      final storedChildId = prefs.getString('child_user_id');
+      final storedFamilyId = prefs.getString('child_family_id');
+
+      String? actualUserId;
+      
+      if (storedChildId != null && storedFamilyId != null) {
+        // This might be a child user - use the stored child ID instead of auth UID
+        actualUserId = storedChildId;
+        _familyId = storedFamilyId;
+      } else {
+        // This is a parent user - use the auth UID directly
+        actualUserId = _authService.currentUser!.uid;
+      }
+
+      final userDoc = await _firestoreService.users.doc(actualUserId).get();
 
       if (!userDoc.exists) {
         _currentUser = null;
         return;
       }
 
-      _currentUser =
-          User.fromFirestore(uid, userDoc.data() as Map<String, dynamic>);
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final isParent = userData['isParent'] ?? false;
+      
+      // Verify: If we have stored child data but the user is actually a parent, clear child data
+      if (storedChildId != null && storedFamilyId != null && isParent) {
+        // Stale child data - clear it and use parent auth UID
+        await prefs.remove('child_user_id');
+        await prefs.remove('child_family_id');
+        // Reload with parent auth UID
+        final parentDoc = await _firestoreService.users.doc(_authService.currentUser!.uid).get();
+        if (parentDoc.exists) {
+          final parentData = parentDoc.data() as Map<String, dynamic>;
+          _currentUser = User.fromFirestore(_authService.currentUser!.uid, parentData);
+          _familyId = _currentUser!.familyId;
+          if (_familyId != null && _familyId!.isNotEmpty) {
+            await loadFamilyData();
+          }
+          return;
+        }
+      }
+
+      _currentUser = User.fromFirestore(actualUserId, userData);
       _familyId = _currentUser!.familyId;
+
+      // Sync user context with NotificationHelper
+      NotificationHelper.setCurrentUser(_currentUser);
 
       if (_familyId != null && _familyId!.isNotEmpty) {
         await loadFamilyData();
@@ -338,6 +378,8 @@ class UserState extends ChangeNotifier {
       _familyId = null;
       _familyCode = null;
       _childrenInFamily = [];
+      // Clear notification user context on sign out
+      NotificationHelper.setCurrentUser(null);
       notifyListeners();
     } catch (e) {
       print('Error signing out: $e');

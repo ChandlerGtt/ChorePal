@@ -115,7 +115,6 @@ class Parent extends User {
 class Child extends User {
   final List<String> completedChores;
   final List<String> redeemedRewards;
-  final String? phoneNumber;
 
   Child({
     required String id,
@@ -124,7 +123,6 @@ class Child extends User {
     int points = 0,
     this.completedChores = const [],
     this.redeemedRewards = const [],
-    this.phoneNumber,
     DateTime? createdAt,
     bool pushNotificationsEnabled = true,
     bool emailNotificationsEnabled = true,
@@ -152,7 +150,6 @@ class Child extends User {
       points: data['points'] ?? 0,
       completedChores: List<String>.from(data['completedChores'] ?? []),
       redeemedRewards: List<String>.from(data['redeemedRewards'] ?? []),
-      phoneNumber: data['phoneNumber'] as String?,
       createdAt: data['createdAt'] != null 
           ? (data['createdAt']).toDate() 
           : DateTime.now(),
@@ -171,7 +168,6 @@ class Child extends User {
       ...baseMap,
       'completedChores': completedChores,
       'redeemedRewards': redeemedRewards,
-      if (phoneNumber != null) 'phoneNumber': phoneNumber,
     };
   }
 
@@ -187,7 +183,6 @@ class Child extends User {
       points: points,
       completedChores: updatedCompletedChores,
       redeemedRewards: redeemedRewards,
-      phoneNumber: phoneNumber,
       createdAt: createdAt,
       pushNotificationsEnabled: pushNotificationsEnabled,
       emailNotificationsEnabled: emailNotificationsEnabled,
@@ -208,7 +203,6 @@ class Child extends User {
       points: points,
       completedChores: completedChores,
       redeemedRewards: updatedRedeemedRewards,
-      phoneNumber: phoneNumber,
       createdAt: createdAt,
       pushNotificationsEnabled: pushNotificationsEnabled,
       emailNotificationsEnabled: emailNotificationsEnabled,
@@ -226,7 +220,6 @@ class Child extends User {
       points: newPoints,
       completedChores: completedChores,
       redeemedRewards: redeemedRewards,
-      phoneNumber: phoneNumber,
       createdAt: createdAt,
       pushNotificationsEnabled: pushNotificationsEnabled,
       emailNotificationsEnabled: emailNotificationsEnabled,
