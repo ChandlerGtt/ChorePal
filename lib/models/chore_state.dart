@@ -133,6 +133,18 @@ class ChoreState extends ChangeNotifier {
       _pendingChores.add(newChore);
       _chores.add(newChore);
 
+      // Notify children if chore is assigned
+      if (newChore.assignedTo.isNotEmpty) {
+        try {
+          for (final childId in newChore.assignedTo) {
+            final child = await _firestoreService.getUserById(childId) as Child;
+            await NotificationHelper.showNewChoreAssigned(child.name, newChore.title);
+          }
+        } catch (e) {
+          print('Error sending new chore notifications: $e');
+        }
+      }
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -262,7 +274,8 @@ class ChoreState extends ChangeNotifier {
       notifyListeners();
       // Create a new list with the child added
       List<String> newAssignedTo = List.from(chore.assignedTo);
-      if (!newAssignedTo.contains(childId)) {
+      final wasAlreadyAssigned = newAssignedTo.contains(childId);
+      if (!wasAlreadyAssigned) {
         newAssignedTo.add(childId);
       }
 
@@ -270,6 +283,16 @@ class ChoreState extends ChangeNotifier {
       await _firestoreService.chores
           .doc(choreId)
           .update({'assignedTo': newAssignedTo});
+
+      // Notify child about new chore assignment (only if newly assigned)
+      if (!wasAlreadyAssigned) {
+        try {
+          final child = await _firestoreService.getUserById(childId) as Child;
+          await NotificationHelper.showNewChoreAssigned(child.name, chore.title);
+        } catch (e) {
+          print('Error sending assignment notification: $e');
+        }
+      }
 
       await loadChores(); // Reload the chores
     } catch (e) {
@@ -313,10 +336,30 @@ class ChoreState extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
+      // Get the old chore to check for new assignments
+      final oldChore = _chores.firstWhere((c) => c.id == updatedChore.id);
+      final oldAssignedTo = Set<String>.from(oldChore.assignedTo);
+      final newAssignedTo = Set<String>.from(updatedChore.assignedTo);
+
+      // Find newly assigned children
+      final newlyAssigned = newAssignedTo.difference(oldAssignedTo);
+
       // Update the chore in Firestore
       await _firestoreService.chores
           .doc(updatedChore.id)
           .update(updatedChore.toFirestore());
+
+      // Notify newly assigned children
+      if (newlyAssigned.isNotEmpty) {
+        try {
+          for (final childId in newlyAssigned) {
+            final child = await _firestoreService.getUserById(childId) as Child;
+            await NotificationHelper.showNewChoreAssigned(child.name, updatedChore.title);
+          }
+        } catch (e) {
+          print('Error sending assignment notifications: $e');
+        }
+      }
 
       await loadChores(); // Reload the chores
     } catch (e) {

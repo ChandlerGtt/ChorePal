@@ -17,6 +17,7 @@ import '../../models/milestone.dart';
 import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
 import '../settings_screen.dart';
+import '../notification_test_screen.dart';
 import '../../widgets/error_widget.dart';
 import '../../widgets/professional_empty_state.dart';
 import '../../widgets/modern_chore_card.dart';
@@ -198,6 +199,12 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         builder: (context) => const SettingsScreen(),
                       ),
                     );
+                  } else if (value == 'test_notifications') {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const NotificationTestScreen(),
+                      ),
+                    );
                   }
                 },
                 itemBuilder: (context) => [
@@ -228,6 +235,16 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         Icon(Icons.settings, color: Colors.blue),
                         SizedBox(width: 8),
                         Text('Settings'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'test_notifications',
+                    child: Row(
+                      children: [
+                        Icon(Icons.bug_report, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('Test Notifications'),
                       ],
                     ),
                   ),
