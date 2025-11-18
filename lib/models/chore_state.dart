@@ -133,17 +133,9 @@ class ChoreState extends ChangeNotifier {
       _pendingChores.add(newChore);
       _chores.add(newChore);
 
-      // Notify children if chore is assigned
-      if (newChore.assignedTo.isNotEmpty) {
-        try {
-          for (final childId in newChore.assignedTo) {
-            final child = await _firestoreService.getUserById(childId) as Child;
-            await NotificationHelper.showNewChoreAssigned(child.name, newChore.title);
-          }
-        } catch (e) {
-          print('Error sending new chore notifications: $e');
-        }
-      }
+      // NOTE: Notifications for new chore assignments are handled by Cloud Functions
+      // (onChoreCreated trigger). We don't send client-side notifications here
+      // to avoid duplicates. Cloud Functions will send to all assigned children.
 
       _isLoading = false;
       notifyListeners();
@@ -177,12 +169,9 @@ class ChoreState extends ChangeNotifier {
           .doc(choreId)
           .update(updatedChore.toFirestore());
 
-      // Get child name for notification
-      final child = await _firestoreService.getUserById(childId) as Child;
-
-      // Notify parent about completed chore
-      await NotificationHelper.showChoreCompletedByChildNotification(
-          child.name, chore.title);
+      // NOTE: Notifications for chore completion are handled by Cloud Functions
+      // (onChoreUpdated trigger). We don't send client-side notifications here
+      // to avoid duplicates. Cloud Functions will notify parents when isPendingApproval changes.
 
       await loadChores(); // Reload the chores
     } catch (e) {
@@ -216,9 +205,9 @@ class ChoreState extends ChangeNotifier {
       // Award points to the child
       await _firestoreService.awardPointsToChild(childId, chore.pointValue);
 
-      // Notify child about approved chore
-      await NotificationHelper.showChoreApprovedNotification(
-          chore.title, chore.pointValue);
+      // NOTE: Notifications for chore approval are handled by Cloud Functions
+      // (onChoreUpdated trigger). We don't send client-side notifications here
+      // to avoid duplicates. Cloud Functions will notify the child when chore is approved.
 
       await loadChores(); // Reload the chores
     } catch (e) {
@@ -284,15 +273,9 @@ class ChoreState extends ChangeNotifier {
           .doc(choreId)
           .update({'assignedTo': newAssignedTo});
 
-      // Notify child about new chore assignment (only if newly assigned)
-      if (!wasAlreadyAssigned) {
-        try {
-          final child = await _firestoreService.getUserById(childId) as Child;
-          await NotificationHelper.showNewChoreAssigned(child.name, chore.title);
-        } catch (e) {
-          print('Error sending assignment notification: $e');
-        }
-      }
+      // NOTE: Notifications for chore assignments are handled by Cloud Functions
+      // (onChoreUpdated trigger). We don't send client-side notifications here
+      // to avoid duplicates. Cloud Functions will detect newly assigned children and notify them.
 
       await loadChores(); // Reload the chores
     } catch (e) {
@@ -349,17 +332,9 @@ class ChoreState extends ChangeNotifier {
           .doc(updatedChore.id)
           .update(updatedChore.toFirestore());
 
-      // Notify newly assigned children
-      if (newlyAssigned.isNotEmpty) {
-        try {
-          for (final childId in newlyAssigned) {
-            final child = await _firestoreService.getUserById(childId) as Child;
-            await NotificationHelper.showNewChoreAssigned(child.name, updatedChore.title);
-          }
-        } catch (e) {
-          print('Error sending assignment notifications: $e');
-        }
-      }
+      // NOTE: Notifications for chore assignments are handled by Cloud Functions
+      // (onChoreUpdated trigger). We don't send client-side notifications here
+      // to avoid duplicates. Cloud Functions will detect newly assigned children and notify them.
 
       await loadChores(); // Reload the chores
     } catch (e) {

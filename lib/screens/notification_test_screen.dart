@@ -82,6 +82,7 @@ class NotificationTestScreen extends StatelessWidget {
               Colors.blue,
               () async {
                 await NotificationHelper.showChoreApprovedNotification(
+                  null, // targetChildId - null for test (uses current user)
                   'Test Chore',
                   10,
                 );
@@ -97,7 +98,7 @@ class NotificationTestScreen extends StatelessWidget {
               Colors.orange,
               () async {
                 await NotificationHelper.showNewChoreAssigned(
-                  'Test Child',
+                  null, // targetChildId - null for test (uses current user)
                   'Test Chore Assignment',
                 );
                 _showSuccess(context, 'New chore assigned notification sent!');

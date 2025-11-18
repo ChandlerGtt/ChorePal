@@ -226,9 +226,32 @@ class NotificationHelper {
   }
 
   // Show notification when parent approves a chore (for child)
+  /// Send notification to a specific child when their chore is approved
+  /// [targetChildId] - The ID of the child who should receive the notification
+  /// [choreName] - The name of the approved chore
+  /// [points] - Points earned
   static Future<void> showChoreApprovedNotification(
-      String choreName, int points) async {
-    // Get current user (will try to load if null)
+      String? targetChildId, String choreName, int points) async {
+    // If targetChildId is provided, send to that specific child
+    if (targetChildId != null) {
+      try {
+        final targetUser = await _firestoreService.getUserById(targetChildId);
+        if (targetUser != null && !targetUser.isParent) {
+          String body =
+              'Great job! "$choreName" was approved. You earned $points points!';
+          await _sendMultiChannelNotification(
+            title: 'Chore Approved! ✅',
+            body: body,
+            user: targetUser,
+          );
+          return;
+        }
+      } catch (e) {
+        print('Error sending approval notification to child $targetChildId: $e');
+      }
+    }
+    
+    // Fallback: Get current user (will try to load if null)
     final user = _currentUser ?? await _tryLoadCurrentUser();
     
     // Only show this notification to children
@@ -367,9 +390,29 @@ class NotificationHelper {
   }
 
   // Family coordination notifications
+  /// Send notification to a specific child when they are assigned a chore
+  /// [targetChildId] - The ID of the child who should receive the notification
+  /// [choreName] - The name of the chore assigned
   static Future<void> showNewChoreAssigned(
-      String childName, String choreName) async {
-    // Get current user (will try to load if null)
+      String? targetChildId, String choreName) async {
+    // If targetChildId is provided, send to that specific child
+    if (targetChildId != null) {
+      try {
+        final targetUser = await _firestoreService.getUserById(targetChildId);
+        if (targetUser != null && !targetUser.isParent) {
+          await _sendMultiChannelNotification(
+            title: 'New Chore Assigned 📝',
+            body: 'You have a new chore: "$choreName"',
+            user: targetUser,
+          );
+          return;
+        }
+      } catch (e) {
+        print('Error sending notification to child $targetChildId: $e');
+      }
+    }
+    
+    // Fallback: Get current user (will try to load if null)
     final user = _currentUser ?? await _tryLoadCurrentUser();
     
     // Only show this notification to children
