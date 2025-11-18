@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:chore_pal/main.dart' as app;
 import 'package:flutter/material.dart';
 import '../helpers/test_helpers.dart';
@@ -13,6 +14,15 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Statistics Tests', () {
+    setUp() async {
+      try {
+        await FirebaseAuth.instance.signOut();
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        // Ignore errors if already signed out
+      }
+    });
+
     testWidgets('Adult can navigate to statistics tab',
         (WidgetTester tester) async {
       // Launch the app
