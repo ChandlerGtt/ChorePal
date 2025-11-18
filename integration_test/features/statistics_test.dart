@@ -14,7 +14,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Statistics Tests', () {
-    setUp() async {
+    setUp(() async {  // FIXED: Added () => arrow function syntax
       try {
         await FirebaseAuth.instance.signOut();
         await Future.delayed(const Duration(milliseconds: 500));
