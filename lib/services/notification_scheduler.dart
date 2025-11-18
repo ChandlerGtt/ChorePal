@@ -53,7 +53,7 @@ class NotificationScheduler {
         body: 'Checking for overdue chores...',
         hour: 12,
         minute: 0,
-        interval: Duration(hours: 6),
+        interval: const Duration(hours: 6),
       );
     } catch (e) {
       print('Error scheduling overdue check: $e');
@@ -105,7 +105,7 @@ class NotificationScheduler {
 
     // If the time has passed today, schedule for tomorrow
     if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(Duration(days: 1));
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
     await _notificationService.scheduleNotification(
@@ -142,7 +142,7 @@ class NotificationScheduler {
 
     // Find the next occurrence of the weekday
     while (scheduledDate.weekday != weekday || scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(Duration(days: 1));
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
     return scheduledDate;
