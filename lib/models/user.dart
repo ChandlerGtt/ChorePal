@@ -12,6 +12,7 @@ class User {
   final bool emailNotificationsEnabled;
   final bool smsNotificationsEnabled;
   final String? profileIcon; // 'boy', 'girl', or null
+  final String? fcmToken;
 
   User({
     required this.id,
@@ -24,6 +25,7 @@ class User {
     this.emailNotificationsEnabled = true,
     this.smsNotificationsEnabled = false,
     this.profileIcon,
+    this.fcmToken,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // Create a User from Firestore data
@@ -49,6 +51,7 @@ class User {
       'emailNotificationsEnabled': emailNotificationsEnabled,
       'smsNotificationsEnabled': smsNotificationsEnabled,
       if (profileIcon != null) 'profileIcon': profileIcon,
+      if (fcmToken != null) 'fcmToken': fcmToken,
     };
   }
 }
@@ -69,6 +72,7 @@ class Parent extends User {
     bool emailNotificationsEnabled = true,
     bool smsNotificationsEnabled = false,
     String? profileIcon,
+    String? fcmToken,
   }) : super(
     id: id,
     name: name,
@@ -79,6 +83,7 @@ class Parent extends User {
     emailNotificationsEnabled: emailNotificationsEnabled,
     smsNotificationsEnabled: smsNotificationsEnabled,
     profileIcon: profileIcon,
+    fcmToken: fcmToken,
   );
 
   // Create a Parent from Firestore data
@@ -96,6 +101,7 @@ class Parent extends User {
       emailNotificationsEnabled: data['emailNotificationsEnabled'] ?? true,
       smsNotificationsEnabled: data['smsNotificationsEnabled'] ?? false,
       profileIcon: data['profileIcon'] as String?,
+      fcmToken: data['fcmToken'] as String?,
     );
   }
 
@@ -128,6 +134,7 @@ class Child extends User {
     bool emailNotificationsEnabled = true,
     bool smsNotificationsEnabled = false,
     String? profileIcon,
+    String? fcmToken,
   }) : super(
     id: id,
     name: name,
@@ -139,6 +146,7 @@ class Child extends User {
     emailNotificationsEnabled: emailNotificationsEnabled,
     smsNotificationsEnabled: smsNotificationsEnabled,
     profileIcon: profileIcon,
+    fcmToken: fcmToken,
   );
 
   // Create a Child from Firestore data
@@ -157,6 +165,7 @@ class Child extends User {
       emailNotificationsEnabled: data['emailNotificationsEnabled'] ?? true,
       smsNotificationsEnabled: data['smsNotificationsEnabled'] ?? false,
       profileIcon: data['profileIcon'] as String?,
+      fcmToken: data['fcmToken'] as String?,
     );
   }
 
@@ -188,6 +197,7 @@ class Child extends User {
       emailNotificationsEnabled: emailNotificationsEnabled,
       smsNotificationsEnabled: smsNotificationsEnabled,
       profileIcon: profileIcon,
+      fcmToken: fcmToken,
     );
   }
 
@@ -208,6 +218,7 @@ class Child extends User {
       emailNotificationsEnabled: emailNotificationsEnabled,
       smsNotificationsEnabled: smsNotificationsEnabled,
       profileIcon: profileIcon,
+      fcmToken: fcmToken,
     );
   }
 
@@ -225,6 +236,7 @@ class Child extends User {
       emailNotificationsEnabled: emailNotificationsEnabled,
       smsNotificationsEnabled: smsNotificationsEnabled,
       profileIcon: profileIcon,
+      fcmToken: fcmToken,
     );
   }
-} 
+}

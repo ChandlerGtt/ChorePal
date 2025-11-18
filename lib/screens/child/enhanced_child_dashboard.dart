@@ -18,6 +18,7 @@ import '../../widgets/dashboard_header.dart';
 import '../../models/user_state.dart';
 import '../../models/user.dart';
 import '../../utils/chorepal_colors.dart';
+import '../../widgets/notification_helper.dart';
 
 class EnhancedChildDashboard extends StatefulWidget {
   final String childId;
@@ -151,6 +152,23 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
               return DashboardHeader(
                 user: currentUser,
                 actions: [
+                  IconButton(
+                    icon: const Icon(Icons.notification_add, color: Colors.white),
+                    tooltip: 'Notify Parent',
+                    onPressed: () {
+                      NotificationHelper.showChoreApprovalNeeded(
+                        'Parent',
+                        'Child',
+                        'a chore',
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Notification sent to parent!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                  ),
                   PopupMenuButton<String>(
                     tooltip: 'Menu',
                     icon: const Icon(
