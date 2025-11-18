@@ -73,6 +73,29 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     }
   }
 
+  /// Refreshes chores and their status by reloading from Firestore
+  Future<void> _refreshChoresData() async {
+    try {
+      final userState = Provider.of<UserState>(context, listen: false);
+      final choreState = Provider.of<ChoreState>(context, listen: false);
+      
+      // Reload family data to get updated family ID
+      await userState.loadCurrentUser();
+      await userState.loadFamilyData();
+      
+      // Get the current family ID and reload chores
+      if (userState.currentUser?.familyId != null) {
+        choreState.setFamilyId(userState.currentUser!.familyId);
+        await choreState.loadChores();
+      }
+    } catch (e) {
+      if (mounted) {
+        AppSnackBar.showError(
+            context, 'Failed to refresh chores. Please try again.');
+      }
+    }
+  }
+
   Future<void> _loadFamilyCode() async {
     try {
       if (_authService.currentUser != null) {
@@ -408,22 +431,34 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
               }
 
               if (choreState.chores.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
-                    child: ProfessionalEmptyState(
-                      icon: Icons.assignment_outlined,
-                      title: 'No Chores Yet',
-                      subtitle:
-                          'Start organizing your family\'s tasks by creating your first chore.',
-                      actionLabel: 'Create First Chore',
-                      onAction: () => _showAddChoreDialog(context),
+                return RefreshIndicator(
+                  onRefresh: () => _refreshChoresData(),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.6,
+                      child: Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: ProfessionalEmptyState(
+                            icon: Icons.assignment_outlined,
+                            title: 'No Chores Yet',
+                            subtitle:
+                                'Start organizing your family\'s tasks by creating your first chore.',
+                            actionLabel: 'Create First Chore',
+                            onAction: () => _showAddChoreDialog(context),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 );
               }
 
-              return _buildChoresList(choreState);
+              return RefreshIndicator(
+                onRefresh: () => _refreshChoresData(),
+                child: _buildChoresList(choreState),
+              );
             },
           ),
         ),
@@ -544,6 +579,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
     final allChores = [...pendingApprovalChores, ...otherChores];
 
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: 16),
       itemCount: allChores.length + (pendingApprovalChores.isNotEmpty ? 1 : 0),
       itemBuilder: (context, index) {
