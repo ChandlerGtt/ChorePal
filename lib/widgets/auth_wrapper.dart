@@ -43,7 +43,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
         return;
       }
 
-      // Check if this is a child user (anonymous auth with stored child ID)
+      // First, check the authenticated user's document to determine if they're a parent
+      // This prevents stale child data from redirecting parents to child dashboard
       final prefs = await SharedPreferences.getInstance();
       final storedChildId = prefs.getString('child_user_id');
       final storedFamilyId = prefs.getString('child_family_id');
@@ -52,108 +53,101 @@ class _AuthWrapperState extends State<AuthWrapper> {
       String? actualUserId;
       String? familyId;
 
-      if (storedChildId != null && storedFamilyId != null) {
-        // This is a child user - use the stored child ID instead of auth UID
-        actualUserId = storedChildId;
-        familyId = storedFamilyId;
-        
-        // Get user data from Firestore using the stored child ID
-        const maxRetries = 10;
-        const retryDelay = Duration(milliseconds: 500);
+      // Always check the auth UID's document first to determine user type
+      // This is critical to prevent parent logins from being misrouted
+      const maxRetries = 10;
+      const retryDelay = Duration(milliseconds: 500);
 
-        for (int attempt = 0; attempt < maxRetries; attempt++) {
-          userDoc = await _firestoreService.users.doc(actualUserId).get();
+      for (int attempt = 0; attempt < maxRetries; attempt++) {
+        userDoc = await _firestoreService.users.doc(user.uid).get();
 
-          if (userDoc.exists) {
-            break; // Document found, exit retry loop
-          }
-
-          // If this is not the last attempt, wait before retrying
-          if (attempt < maxRetries - 1) {
-            await Future.delayed(retryDelay);
-          }
+        if (userDoc.exists) {
+          break; // Document found, exit retry loop
         }
 
-        if (userDoc == null || !userDoc.exists) {
-          // Child document not found - clear stored data and sign out
-          await prefs.remove('child_user_id');
-          await prefs.remove('child_family_id');
+        // If this is not the last attempt, wait before retrying
+        if (attempt < maxRetries - 1) {
+          await Future.delayed(retryDelay);
+        }
+      }
+
+      if (userDoc == null || !userDoc.exists) {
+        // User exists in Firebase Auth but not in Firestore after retries
+        // Wait a bit longer and try one more time before signing out
+        await Future.delayed(const Duration(seconds: 2));
+        final finalDoc = await _firestoreService.users.doc(user.uid).get();
+
+        if (!finalDoc.exists) {
+          // Still doesn't exist after extended wait - sign out
           await _authService.signOut();
           setState(() {
             _isLoading = false;
           });
           return;
         }
-      } else {
-        // This is a parent user - use the auth UID directly
-        actualUserId = user.uid;
-        
-        // Get user data from Firestore with retry logic
-        const maxRetries = 10;
-        const retryDelay = Duration(milliseconds: 500);
+        userDoc = finalDoc;
+      }
 
-        for (int attempt = 0; attempt < maxRetries; attempt++) {
-          userDoc = await _firestoreService.users.doc(actualUserId).get();
+      // Get user data from the auth UID's document
+      final authUserData = userDoc.data() as Map<String, dynamic>;
+      final isParentFromAuth = authUserData['isParent'] ?? false;
 
-          if (userDoc.exists) {
-            break; // Document found, exit retry loop
-          }
-
-          // If this is not the last attempt, wait before retrying
-          if (attempt < maxRetries - 1) {
-            await Future.delayed(retryDelay);
-          }
+      // If the authenticated user is a parent, clear any stale child data and use parent account
+      if (isParentFromAuth) {
+        // Clear any stored child data (stale from previous child login)
+        if (storedChildId != null || storedFamilyId != null) {
+          await prefs.remove('child_user_id');
+          await prefs.remove('child_family_id');
         }
+        
+        // Use parent auth UID
+        actualUserId = user.uid;
+        familyId = authUserData['familyId'] as String? ?? '';
+        userDoc = userDoc; // Already loaded above
+      } else {
+        // This is a child user - check if we have stored child data
+        if (storedChildId != null && storedFamilyId != null) {
+          // Use the stored child ID (child uses anonymous auth, so auth UID != child document ID)
+          actualUserId = storedChildId;
+          familyId = storedFamilyId;
+          
+          // Get child document from Firestore
+          for (int attempt = 0; attempt < maxRetries; attempt++) {
+            userDoc = await _firestoreService.users.doc(actualUserId).get();
 
-        if (userDoc == null || !userDoc.exists) {
-          // User exists in Firebase Auth but not in Firestore after retries
-          // Wait a bit longer and try one more time before signing out
-          await Future.delayed(const Duration(seconds: 2));
-          final finalDoc = await _firestoreService.users.doc(actualUserId).get();
+            if (userDoc.exists) {
+              break; // Document found, exit retry loop
+            }
 
-          if (!finalDoc.exists) {
-            // Still doesn't exist after extended wait - sign out
+            if (attempt < maxRetries - 1) {
+              await Future.delayed(retryDelay);
+            }
+          }
+
+          if (userDoc == null || !userDoc.exists) {
+            // Child document not found - clear stored data and sign out
+            await prefs.remove('child_user_id');
+            await prefs.remove('child_family_id');
             await _authService.signOut();
             setState(() {
               _isLoading = false;
             });
             return;
           }
-          userDoc = finalDoc;
+        } else {
+          // No stored child data but auth user is not a parent - this shouldn't happen
+          await _authService.signOut();
+          setState(() {
+            _isLoading = false;
+          });
+          return;
         }
       }
 
       final userData = userDoc.data() as Map<String, dynamic>;
       final isParent = userData['isParent'] ?? false;
       final finalFamilyId = familyId ?? (userData['familyId'] as String? ?? '');
-      // actualUserId is guaranteed to be non-null here (set in both branches above)
-      final finalUserId = actualUserId;
-
-      // Verify: If we have stored child data but the user is actually a parent, clear child data
-      if (storedChildId != null && storedFamilyId != null && isParent) {
-        // Stale child data - clear it and use parent auth UID
-        await prefs.remove('child_user_id');
-        await prefs.remove('child_family_id');
-        // Reload with parent auth UID
-        final parentDoc = await _firestoreService.users.doc(user.uid).get();
-        if (parentDoc.exists) {
-          final parentData = parentDoc.data() as Map<String, dynamic>;
-          final currentUser = User.fromFirestore(user.uid, parentData);
-          NotificationHelper.setCurrentUser(currentUser);
-          await _initializeParentDashboard(parentData['familyId'] ?? '');
-          return;
-        }
-      }
-
-      // Verify: If we're using parent auth but have child data stored, clear it
-      if (storedChildId == null && storedFamilyId == null && !isParent) {
-        // This shouldn't happen, but if it does, sign out
-        await _authService.signOut();
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
+      final finalUserId = actualUserId!;
 
       // Set user context for notifications
       final currentUser = User.fromFirestore(finalUserId, userData);
