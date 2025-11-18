@@ -11,11 +11,6 @@ import '../login_screen.dart';
 import '../reward_history_screen.dart';
 import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
-import '../settings_screen.dart';
-import '../../widgets/professional_empty_state.dart';
-import '../../widgets/modern_chore_card.dart';
-import '../../utils/chorepal_colors.dart';
-import '../settings_screen.dart';
 import '../../widgets/professional_empty_state.dart';
 import '../../widgets/modern_chore_card.dart';
 import '../../utils/chorepal_colors.dart';
@@ -162,7 +157,7 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
             } else if (value == 'settings') {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
+                  builder: (context) => SettingsScreen(),
                 ),
               );
             }
@@ -206,7 +201,7 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
           onPressed: () {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => const SettingsScreen(),
+                builder: (context) => SettingsScreen(),
               ),
             );
           },
@@ -567,5 +562,20 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
         );
       }
     }
+  }
+}
+
+// Placeholder SettingsScreen widget
+class SettingsScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Settings'),
+      ),
+      body: const Center(
+        child: Text('Settings Screen - Coming Soon'),
+      ),
+    );
   }
 }

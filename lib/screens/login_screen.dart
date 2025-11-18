@@ -293,53 +293,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  /// Builds the phone number field for parent registration
-  Widget _buildPhoneNumberField() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      children: [
-        TextFormField(
-          controller: _phoneNumberController,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(
-            labelText: 'Phone Number (Optional)',
-            hintText: '+18777804236 (E.164 format)',
-            prefixIcon: isDarkMode
-                ? Container(
-                    decoration: const BoxDecoration(
-                      gradient: ChorePalColors.darkBlueGradient,
-                      shape: BoxShape.circle,
-                    ),
-                    margin: const EdgeInsets.all(8),
-                    child:
-                        const Icon(Icons.phone, color: Colors.white, size: 20),
-                  )
-                : Icon(Icons.phone, color: ChorePalColors.darkBlue),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: ChorePalColors.darkBlue, width: 2),
-            ),
-            filled: true,
-            fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-          ),
-          style: TextStyle(
-            color: isDarkMode ? Colors.white : Colors.black87,
-          ),
-          validator: (value) {
-            if (value != null && value.isNotEmpty && !value.startsWith('+')) {
-              return 'Phone number must be in E.164 format (e.g., +18777804236)';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
 
   /// Builds the name field for parent registration
   Widget _buildNameField() {
@@ -351,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen>
           controller: _nameController,
           decoration: InputDecoration(
             labelText: 'Your Name',
-            prefixIcon: Icon(Icons.person, color: _primaryColor),
+            prefixIcon: Icon(Icons.person, color: ChorePalColors.darkBlue),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -380,28 +333,17 @@ class _LoginScreenState extends State<LoginScreen>
       controller: _emailController,
       decoration: InputDecoration(
         labelText: 'Email',
-        prefixIcon: Icon(Icons.email, color: _primaryColor),
+        prefixIcon: Icon(Icons.email, color: ChorePalColors.darkBlue),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(
-            color:
-                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
-            width: 2,
-          ),
-          borderSide: BorderSide(
-            color:
-                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
+            color: isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
             width: 2,
           ),
         ),
-        filled: true,
-        fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-      ),
-      style: TextStyle(
-        color: isDarkMode ? Colors.white : Colors.black87,
         filled: true,
         fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       ),
@@ -430,29 +372,17 @@ class _LoginScreenState extends State<LoginScreen>
       obscureText: true,
       decoration: InputDecoration(
         labelText: 'Password',
-        prefixIcon: Icon(Icons.lock, color: _primaryColor),
+        prefixIcon: Icon(Icons.lock, color: ChorePalColors.darkBlue),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(
-            color:
-                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
-            width: 2,
-          ),
-          borderSide: BorderSide(
-            color:
-                isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
+            color: isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.darkBlue,
             width: 2,
           ),
         ),
-        filled: true,
-        fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-      ),
-      style: TextStyle(
-        color: isDarkMode ? Colors.white : Colors.black87,
-      ),
         filled: true,
         fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       ),
@@ -706,7 +636,7 @@ class _LoginScreenState extends State<LoginScreen>
           color: isDarkMode ? Colors.grey.shade300 : ChorePalColors.darkBlue,
           fontWeight: FontWeight.w500,
         ),
-        prefixIcon: Icon(Icons.person, color: _primaryColor),
+        prefixIcon: Icon(Icons.person, color: ChorePalColors.darkBlue),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
@@ -717,15 +647,11 @@ class _LoginScreenState extends State<LoginScreen>
         hintText: 'Enter your name',
         filled: true,
         fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-        fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
       ),
-      style: TextStyle(
-        color: isDarkMode ? Colors.white : Colors.black87,
       style: TextStyle(
         color: isDarkMode ? Colors.white : Colors.black87,
         fontSize: 16,
       ),
-      textCapitalization: TextCapitalization.words,
       textCapitalization: TextCapitalization.words,
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -748,10 +674,10 @@ class _LoginScreenState extends State<LoginScreen>
           decoration: InputDecoration(
             labelText: 'Family Code',
             labelStyle: TextStyle(
-              color: _primaryColor,
+              color: ChorePalColors.darkBlue,
               fontWeight: FontWeight.w500,
             ),
-            prefixIcon: Icon(Icons.numbers, color: _primaryColor),
+            prefixIcon: Icon(Icons.numbers, color: ChorePalColors.darkBlue),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -767,18 +693,10 @@ class _LoginScreenState extends State<LoginScreen>
           ),
           style: TextStyle(
             color: isDarkMode ? Colors.white : Colors.black87,
-            filled: true,
-            fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-          ),
-          style: TextStyle(
-            color: isDarkMode ? Colors.white : Colors.black87,
             fontSize: 20,
             letterSpacing: 8,
             fontWeight: FontWeight.bold,
           ),
-          keyboardType: TextInputType.number,
-          maxLength: 6,
-          textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           maxLength: 6,
           textAlign: TextAlign.center,
