@@ -1,5 +1,3 @@
-
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -11,8 +9,6 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-
 
   // Initialize the notification service
   Future<void> initialize() async {
@@ -37,26 +33,9 @@ class NotificationService {
       // Create notification channel for Android 8.0+
       await _createNotificationChannel();
 
-      // Initialize Firebase Messaging
-      await _firebaseMessaging.requestPermission();
-      final fcmToken = await _firebaseMessaging.getToken();
-      print('FCM Token: $fcmToken');
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-
       print('Notification service initialized successfully');
     } catch (e) {
       print('Error initializing notification service: $e');
-    }
-  }
-
-  // Get FCM token
-  Future<String?> getFcmToken() async {
-    try {
-      return await _firebaseMessaging.getToken();
-    } catch (e) {
-      print('Error getting FCM token: $e');
-      return null;
     }
   }
 
@@ -200,8 +179,4 @@ class NotificationService {
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
   }
-}
-
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Handling a background message: ${message.messageId}');
 }

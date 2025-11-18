@@ -112,18 +112,6 @@ class FirestoreService {
     });
   }
 
-    /// Updates a user's profile.
-  Future<void> updateUser(String userId, Map<String, dynamic> data) async {
-    try {
-      await users.doc(userId).update(data);
-    } catch (e) {
-      // Handle errors, e.g., user not found or permission denied
-      print('Error updating user: $e');
-      throw Exception('Failed to update user profile.');
-    }
-  }
-
-
   /// Gets a user by ID.
   Future<User> getUserById(String userId) async {
     try {

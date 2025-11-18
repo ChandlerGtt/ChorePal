@@ -1,13 +1,8 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:ChorePal/services/firestore_service.dart';
-import 'package:ChorePal/services/notification_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirestoreService _firestoreService = FirestoreService();
-  final NotificationService _notificationService = NotificationService();
 
   // Initialize auth persistence for web only
   Future<void> initialize() async {
@@ -32,12 +27,8 @@ class AuthService {
   Future<UserCredential> signInWithEmailAndPassword(
       String email, String password) async {
     try {
-      final credential = await _auth.signInWithEmailAndPassword(
+      return await _auth.signInWithEmailAndPassword(
           email: email, password: password);
-      if (credential.user != null) {
-        await _updateFcmToken(credential.user!.uid);
-      }
-      return credential;
     } on FirebaseAuthException catch (e) {
       throw _getFirebaseAuthException(e);
     } catch (e) {
@@ -114,19 +105,6 @@ class AuthService {
         return 'Invalid email or password. Please try again.';
       default:
         return 'Authentication failed. Please try again.';
-    }
-  }
-
-  // Update FCM token
-  Future<void> _updateFcmToken(String userId) async {
-    try {
-      final fcmToken = await _notificationService.getFcmToken();
-      if (fcmToken != null) {
-        await _firestoreService.updateUser(userId, {'fcmToken': fcmToken});
-      }
-    } catch (e) {
-      // Handle errors silently
-      print('Error updating FCM token: $e');
     }
   }
 }
