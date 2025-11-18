@@ -7,13 +7,16 @@ import '../../models/milestone.dart';
 import '../../widgets/reward_card.dart';
 import '../../widgets/enhanced_milestone_dialog.dart';
 import '../../services/firestore_service.dart';
-import '../login_screen.dart';
 import '../reward_history_screen.dart';
 import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
 import '../settings_screen.dart';
+import '../notification_test_screen.dart';
 import '../../widgets/professional_empty_state.dart';
 import '../../widgets/modern_chore_card.dart';
+import '../../widgets/dashboard_header.dart';
+import '../../models/user_state.dart';
+import '../../models/user.dart';
 import '../../utils/chorepal_colors.dart';
 
 class EnhancedChildDashboard extends StatefulWidget {
@@ -99,8 +102,8 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
           final isDarkMode = Theme.of(context).brightness == Brightness.dark;
           return Container(
             decoration: BoxDecoration(
-              gradient: isDarkMode 
-                  ? ChorePalColors.darkBackgroundGradient 
+              gradient: isDarkMode
+                  ? ChorePalColors.darkBackgroundGradient
                   : ChorePalColors.backgroundGradient,
             ),
             child: _isLoading
@@ -124,144 +127,201 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
-    return AppBar(
-      elevation: 0,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: isDarkMode 
-              ? ChorePalColors.darkBlueGradient
-              : ChorePalColors.primaryGradient,
-        ),
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(60),
+      child: Consumer<UserState>(
+        builder: (context, userState, child) {
+          // Find the current child user
+          User? currentUser;
+          if (userState.currentUser != null &&
+              userState.currentUser!.id == widget.childId) {
+            currentUser = userState.currentUser;
+          } else {
+            // Try to find in children list
+            currentUser = userState.childrenInFamily
+                .where((child) => child.id == widget.childId)
+                .firstOrNull;
+          }
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = constraints.maxWidth;
+              final isSmallScreen = screenWidth < 400;
+              
+              return DashboardHeader(
+                user: currentUser,
+                actions: [
+                  PopupMenuButton<String>(
+                    tooltip: 'Menu',
+                    icon: const Icon(
+                      Icons.more_vert,
+                      color: Colors.white,
+                    ),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF2D2D2D)
+                        : Colors.white,
+                    onSelected: (value) {
+                      if (value == 'chores') {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ChoreHistoryScreen(childId: widget.childId),
+                          ),
+                        );
+                      } else if (value == 'rewards') {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                RewardHistoryScreen(childId: widget.childId),
+                          ),
+                        );
+                      } else if (value == 'settings') {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SettingsScreen(),
+                          ),
+                        );
+                      } else if (value == 'test_notifications') {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const NotificationTestScreen(),
+                          ),
+                        );
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'chores',
+                        child: Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text('My Completed Chores'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'rewards',
+                        child: Row(
+                          children: [
+                            Icon(Icons.card_giftcard, color: Colors.purple),
+                            SizedBox(width: 8),
+                            Text('My Redeemed Rewards'),
+                          ],
+                        ),
+                      ),
+                  const PopupMenuItem(
+                    value: 'settings',
+                    child: Row(
+                      children: [
+                        Icon(Icons.settings, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text('Settings'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'test_notifications',
+                    child: Row(
+                      children: [
+                        Icon(Icons.bug_report, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text('Test Notifications'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+                  IconButton(
+                    icon: const Icon(Icons.settings, color: Colors.white),
+                    tooltip: 'Settings',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  Flexible(
+                    child: Container(
+                      margin: EdgeInsets.only(
+                        left: screenWidth * 0.01,
+                        right: screenWidth * 0.02,
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? screenWidth * 0.02 : screenWidth * 0.025,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.amber.shade300, Colors.amber.shade500],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.amber.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IntrinsicHeight(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              height: isSmallScreen ? 14 : 16,
+                              width: isSmallScreen ? 14 : 16,
+                              child: Icon(
+                                Icons.stars,
+                                color: Colors.white,
+                                size: isSmallScreen ? 14 : 16,
+                              ),
+                            ),
+                            SizedBox(width: isSmallScreen ? 4 : 5),
+                            Flexible(
+                              child: Text(
+                                isSmallScreen ? '$_points' : '$_points Points',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isSmallScreen ? 12 : 13,
+                                  height: 1.0,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
       ),
-      title: const Text('My ChorePal'),
-      actions: [
-        PopupMenuButton<String>(
-          tooltip: 'Menu',
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) {
-            if (value == 'chores') {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) =>
-                      ChoreHistoryScreen(childId: widget.childId),
-                ),
-              );
-            } else if (value == 'rewards') {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) =>
-                      RewardHistoryScreen(childId: widget.childId),
-                ),
-              );
-            } else if (value == 'settings') {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                ),
-              );
-            }
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'chores',
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green),
-                  SizedBox(width: 8),
-                  Text('My Completed Chores'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'rewards',
-              child: Row(
-                children: [
-                  Icon(Icons.card_giftcard, color: Colors.purple),
-                  SizedBox(width: 8),
-                  Text('My Redeemed Rewards'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'settings',
-              child: Row(
-                children: [
-                  Icon(Icons.settings, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Text('Settings'),
-                ],
-              ),
-            ),
-          ],
-        ),
-        IconButton(
-          icon: const Icon(Icons.settings),
-          tooltip: 'Settings',
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const SettingsScreen(),
-              ),
-            );
-          },
-        ),
-        Container(
-          margin: const EdgeInsets.all(8.0),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.amber.shade300, Colors.amber.shade500],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.amber.withOpacity(0.3),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.stars, color: Colors.white, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                '$_points Points',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: () {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            );
-          },
-        ),
-      ],
     );
   }
 
   Widget _buildBottomNavBar() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       decoration: BoxDecoration(
-        gradient: isDarkMode 
+        gradient: isDarkMode
             ? ChorePalColors.darkBlueGradient
             : ChorePalColors.primaryGradient,
         boxShadow: [
           BoxShadow(
-            color: (isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.skyBlue)
-                .withOpacity(0.3),
+            color:
+                (isDarkMode ? ChorePalColors.darkBlue : ChorePalColors.skyBlue)
+                    .withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -307,6 +367,7 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 icon,
@@ -314,12 +375,18 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
                 size: isSelected ? 26 : 22,
               ),
               const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isSelected ? 11 : 10,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isSelected ? 11 : 10,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
                 ),
               ),
             ],
@@ -346,13 +413,14 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
             .toList();
 
         if (myChores.isEmpty) {
-          return Center(
+          return const Center(
             child: Padding(
-              padding: const EdgeInsets.all(32.0),
+              padding: EdgeInsets.all(32.0),
               child: ProfessionalEmptyState(
                 icon: Icons.celebration,
                 title: 'All Caught Up!',
-                subtitle: 'You don\'t have any chores assigned right now. Great job staying on top of your tasks!',
+                subtitle:
+                    'You don\'t have any chores assigned right now. Great job staying on top of your tasks!',
                 iconColor: Colors.green,
               ),
             ),
@@ -425,13 +493,14 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
         }
 
         if (rewardState.rewards.isEmpty) {
-          return Center(
+          return const Center(
             child: Padding(
-              padding: const EdgeInsets.all(32.0),
+              padding: EdgeInsets.all(32.0),
               child: ProfessionalEmptyState(
                 icon: Icons.card_giftcard_outlined,
                 title: 'No Rewards Available',
-                subtitle: 'Ask your parents to add some exciting rewards you can earn with your points!',
+                subtitle:
+                    'Ask your parents to add some exciting rewards you can earn with your points!',
                 iconColor: Colors.purple,
               ),
             ),
@@ -537,11 +606,11 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
+            content: const Row(
               children: [
-                const Icon(Icons.celebration, color: Colors.white),
-                const SizedBox(width: 8),
-                const Text('Reward redeemed successfully!'),
+                Icon(Icons.celebration, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Reward redeemed successfully!'),
               ],
             ),
             backgroundColor: Colors.purple,

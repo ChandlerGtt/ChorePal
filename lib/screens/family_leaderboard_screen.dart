@@ -5,6 +5,7 @@ import 'package:confetti/confetti.dart';
 import '../models/leaderboard.dart';
 import '../models/user_state.dart';
 import '../models/chore_state.dart';
+import '../utils/chorepal_colors.dart';
 
 class FamilyLeaderboardScreen extends StatefulWidget {
   final String? currentChildId; // If viewing as a child
@@ -179,37 +180,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Family Leaderboard'),
-        elevation: 0,
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              setState(() {
-                _selectedPeriod = value;
-              });
-              _loadLeaderboardData();
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'week', child: Text('This Week')),
-              const PopupMenuItem(value: 'month', child: Text('This Month')),
-              const PopupMenuItem(value: 'all-time', child: Text('All Time')),
-            ],
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(_getPeriodTitle()),
-                  const Icon(Icons.arrow_drop_down),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Stack(
+    return Stack(
         children: [
           // Background gradient
           Container(
@@ -251,6 +222,89 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _buildLeaderboardContent(),
+        ],
+    );
+  }
+
+  Widget _buildPeriodSelectorBar() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      decoration: BoxDecoration(
+        gradient: isDarkMode
+            ? ChorePalColors.darkBlueGradient
+            : ChorePalColors.primaryGradient,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'Family Leaderboard',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              setState(() {
+                _selectedPeriod = value;
+              });
+              _loadLeaderboardData();
+            },
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero,
+            ),
+            color: isDarkMode
+                ? const Color(0xFF2D2D2D)
+                : Colors.white,
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'week',
+                child: Text(
+                  'This Week',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'month',
+                child: Text(
+                  'This Month',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'all-time',
+                child: Text(
+                  'All Time',
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _getPeriodTitle(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(Icons.arrow_drop_down, color: Colors.white),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -296,6 +350,10 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
       onRefresh: _loadLeaderboardData,
       child: CustomScrollView(
         slivers: [
+          // Period selector bar
+          SliverToBoxAdapter(
+            child: _buildPeriodSelectorBar(),
+          ),
           // Header section with trophy
           SliverToBoxAdapter(
             child: _buildHeaderSection(),
@@ -309,7 +367,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                 (context, index) {
                   return SlideTransition(
                     position: Tween<Offset>(
-                      begin: Offset(1.0, 0.0),
+                      begin: const Offset(1.0, 0.0),
                       end: Offset.zero,
                     ).animate(CurvedAnimation(
                       parent: _slideController,
@@ -375,7 +433,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
           const SizedBox(height: 16),
 
           // Winner info
-          Text(
+          const Text(
             'Family Champion',
             style: TextStyle(
               fontSize: 24,
@@ -446,7 +504,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: isCurrentUser
-              ? BorderSide(color: Colors.blue, width: 2)
+              ? const BorderSide(color: Colors.blue, width: 2)
               : BorderSide.none,
         ),
         child: Container(
@@ -556,7 +614,9 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                       const SizedBox(height: 8),
 
                       // Stats row
-                      Row(
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           _buildStatChip(
                             '${entry.child.points}',
@@ -565,7 +625,6 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                             Colors.amber,
                             entry.rank <= 3,
                           ),
-                          const SizedBox(width: 8),
                           _buildStatChip(
                             '${entry.completedChoresThisWeek}',
                             'this week',
@@ -573,8 +632,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                             Colors.green,
                             entry.rank <= 3,
                           ),
-                          if (entry.streak > 0) ...[
-                            const SizedBox(width: 8),
+                          if (entry.streak > 0)
                             _buildStatChip(
                               '${entry.streak}',
                               'day streak',
@@ -582,7 +640,6 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                               Colors.red,
                               entry.rank <= 3,
                             ),
-                          ],
                         ],
                       ),
                     ],
@@ -605,12 +662,12 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
       content = const Icon(Icons.emoji_events, color: Colors.white, size: 20);
     } else if (rank == 2) {
       badgeColor = Colors.grey.shade400;
-      content = Text('2',
+      content = const Text('2',
           style: TextStyle(
               color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16));
     } else if (rank == 3) {
       badgeColor = Colors.brown.shade400;
-      content = Text('3',
+      content = const Text('3',
           style: TextStyle(
               color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16));
     } else {

@@ -49,7 +49,7 @@ class LeaderboardEntry {
     if (rank == 1) return "You're the family champion! Keep up the amazing work!";
     if (rank == 2) return "So close to the top! One more push and you'll be #1!";
     if (rank == 3) return "Great job! You're in the top 3 helpers!";
-    if (streak >= 7) return "Your consistency is inspiring! ${streak} days strong!";
+    if (streak >= 7) return "Your consistency is inspiring! $streak days strong!";
     if (weeklyProgress >= 0.9) return "You're crushing your weekly goals!";
     if (completedChoresThisWeek >= 5) return "Your hard work is really showing!";
     return "Every chore counts! Keep being awesome!";
