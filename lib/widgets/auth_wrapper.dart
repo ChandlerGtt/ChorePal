@@ -25,6 +25,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   final FirestoreService _firestoreService = FirestoreService();
   bool _isLoading = true;
   String? _errorMessage;
+  Widget? _targetWidget; // Widget to display after initialization
 
   @override
   void initState() {
@@ -185,11 +186,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
       await rewardState.loadRewards();
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const EnhancedParentDashboard(),
-          ),
-        );
+        setState(() {
+          _targetWidget = const EnhancedParentDashboard();
+          _isLoading = false;
+        });
       }
     } catch (e) {
       setState(() {
@@ -212,11 +212,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
       await rewardState.loadRewards();
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => EnhancedChildDashboard(childId: childId),
-          ),
-        );
+        setState(() {
+          _targetWidget = EnhancedChildDashboard(childId: childId);
+          _isLoading = false;
+        });
       }
     } catch (e) {
       setState(() {
@@ -267,10 +266,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
               ElevatedButton(
                 onPressed: () async {
                   await _authService.signOut();
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                        builder: (context) => const LoginScreen()),
-                  );
+                  // No navigation needed - StreamBuilder will handle it
                 },
                 child: const Text('Sign Out and Try Again'),
               ),
@@ -278,6 +274,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
           ),
         ),
       );
+    }
+
+    // Return the target widget if we have one (dashboard)
+    if (_targetWidget != null) {
+      return _targetWidget!;
     }
 
     // If we get here, user is not authenticated
