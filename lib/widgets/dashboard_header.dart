@@ -47,11 +47,11 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // App title/logo area
-              Flexible(
+              const Flexible(
                 flex: 2,
                 child: Text(
                   'ChorePal',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

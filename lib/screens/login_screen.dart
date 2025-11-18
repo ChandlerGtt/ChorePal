@@ -268,13 +268,13 @@ class _LoginScreenState extends State<LoginScreen>
                     child:
                         const Icon(Icons.phone, color: Colors.white, size: 20),
                   )
-                : Icon(Icons.phone, color: ChorePalColors.darkBlue),
+                : const Icon(Icons.phone, color: ChorePalColors.darkBlue),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: ChorePalColors.darkBlue, width: 2),
+              borderSide: const BorderSide(color: ChorePalColors.darkBlue, width: 2),
             ),
             filled: true,
             fillColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
@@ -314,13 +314,13 @@ class _LoginScreenState extends State<LoginScreen>
                     child:
                         const Icon(Icons.person, color: Colors.white, size: 20),
                   )
-                : Icon(Icons.person, color: ChorePalColors.darkBlue),
+                : const Icon(Icons.person, color: ChorePalColors.darkBlue),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: ChorePalColors.darkBlue, width: 2),
+              borderSide: const BorderSide(color: ChorePalColors.darkBlue, width: 2),
             ),
           ),
           validator: (value) {
@@ -352,7 +352,7 @@ class _LoginScreenState extends State<LoginScreen>
                 margin: const EdgeInsets.all(8),
                 child: const Icon(Icons.email, color: Colors.white, size: 20),
               )
-            : Icon(Icons.email, color: ChorePalColors.darkBlue),
+            : const Icon(Icons.email, color: ChorePalColors.darkBlue),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
@@ -401,7 +401,7 @@ class _LoginScreenState extends State<LoginScreen>
                 margin: const EdgeInsets.all(8),
                 child: const Icon(Icons.lock, color: Colors.white, size: 20),
               )
-            : Icon(Icons.lock, color: ChorePalColors.darkBlue),
+            : const Icon(Icons.lock, color: ChorePalColors.darkBlue),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
@@ -497,16 +497,16 @@ class _LoginScreenState extends State<LoginScreen>
                           strokeWidth: 3,
                         ),
                       )
-                    : Row(
+                    : const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
+                          Text(
                             'Login',
                             style: TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold),
                           ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.arrow_forward),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward),
                         ],
                       ),
               ),
@@ -591,7 +591,7 @@ class _LoginScreenState extends State<LoginScreen>
                     color: ChorePalColors.darkBlue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.lock_reset,
                     color: ChorePalColors.darkBlue,
                     size: 24,
@@ -622,13 +622,13 @@ class _LoginScreenState extends State<LoginScreen>
                       labelText: 'Email',
                       hintText: 'your.email@example.com',
                       prefixIcon:
-                          Icon(Icons.email, color: ChorePalColors.darkBlue),
+                          const Icon(Icons.email, color: ChorePalColors.darkBlue),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
+                        borderSide: const BorderSide(
                             color: ChorePalColors.darkBlue, width: 2),
                       ),
                       filled: true,
@@ -908,13 +908,13 @@ class _LoginScreenState extends State<LoginScreen>
                 margin: const EdgeInsets.all(8),
                 child: const Icon(Icons.person, color: Colors.white, size: 20),
               )
-            : Icon(Icons.person, color: ChorePalColors.darkBlue),
+            : const Icon(Icons.person, color: ChorePalColors.darkBlue),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: ChorePalColors.darkBlue, width: 2),
+          borderSide: const BorderSide(color: ChorePalColors.darkBlue, width: 2),
         ),
         hintText: 'Enter your name',
         filled: true,
@@ -945,7 +945,7 @@ class _LoginScreenState extends State<LoginScreen>
           controller: _familyCodeController,
           decoration: InputDecoration(
             labelText: 'Family Code',
-            labelStyle: TextStyle(
+            labelStyle: const TextStyle(
               color: ChorePalColors.darkBlue,
               fontWeight: FontWeight.w500,
             ),
@@ -959,13 +959,13 @@ class _LoginScreenState extends State<LoginScreen>
                     child: const Icon(Icons.numbers,
                         color: Colors.white, size: 20),
                   )
-                : Icon(Icons.numbers, color: ChorePalColors.darkBlue),
+                : const Icon(Icons.numbers, color: ChorePalColors.darkBlue),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: ChorePalColors.darkBlue, width: 2),
+              borderSide: const BorderSide(color: ChorePalColors.darkBlue, width: 2),
             ),
             hintText: 'Enter 6-digit code',
             helperText: 'Ask your parent for the 6-digit family code',

@@ -35,7 +35,7 @@ class NotificationManager {
       final pendingChores = chores
           .where((chore) =>
               !chore.isCompleted &&
-              chore.deadline.isBefore(today.add(Duration(days: 1))))
+              chore.deadline.isBefore(today.add(const Duration(days: 1))))
           .toList();
 
       await NotificationHelper.showDailyReminder(
@@ -87,7 +87,7 @@ class NotificationManager {
     try {
       final now = DateTime.now();
       final weekStart = now.subtract(Duration(days: now.weekday - 1));
-      final weekEnd = weekStart.add(Duration(days: 6));
+      final weekEnd = weekStart.add(const Duration(days: 6));
 
       final chores =
           await _firestoreService.getChoresForChild(childId, familyId);
@@ -168,9 +168,9 @@ class NotificationManager {
       for (final chore in completedChores) {
         if (_isSameDay(chore.completedAt!, currentDate) ||
             _isSameDay(
-                chore.completedAt!, currentDate.subtract(Duration(days: 1)))) {
+                chore.completedAt!, currentDate.subtract(const Duration(days: 1)))) {
           streak++;
-          currentDate = currentDate.subtract(Duration(days: 1));
+          currentDate = currentDate.subtract(const Duration(days: 1));
         } else {
           break;
         }

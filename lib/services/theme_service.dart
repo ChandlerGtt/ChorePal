@@ -36,13 +36,13 @@ class ThemeService extends ChangeNotifier {
   }
 
   ThemeData getLightTheme() {
-    final primaryColor = ChorePalColors.lightBlue;
-    final secondaryColor = ChorePalColors.darkBlue;
-    final accentColor = ChorePalColors.sunshineOrange;
-    final backgroundColor = ChorePalColors.softBackground;
-    final cardColor = Colors.white;
-    final textColor = ChorePalColors.textPrimary;
-    final textSecondaryColor = ChorePalColors.textSecondary;
+    const primaryColor = ChorePalColors.lightBlue;
+    const secondaryColor = ChorePalColors.darkBlue;
+    const accentColor = ChorePalColors.sunshineOrange;
+    const backgroundColor = ChorePalColors.softBackground;
+    const cardColor = Colors.white;
+    const textColor = ChorePalColors.textPrimary;
+    const textSecondaryColor = ChorePalColors.textSecondary;
 
     return ThemeData(
       useMaterial3: false,
@@ -86,7 +86,7 @@ class ThemeService extends ChangeNotifier {
           fontWeight: FontWeight.normal,
           fontSize: 13,
         ),
-        overlayColor: const MaterialStatePropertyAll(Colors.transparent),
+        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
         splashFactory: NoSplash.splashFactory,
       ),
       textTheme: TextTheme(
@@ -193,12 +193,12 @@ class ThemeService extends ChangeNotifier {
   }
 
   ThemeData getDarkTheme() {
-    final primaryColor = ChorePalColors.darkBlue;
-    final secondaryColor = ChorePalColors.lightBlue;
-    final accentColor = ChorePalColors.sunshineOrange;
-    final backgroundColor = const Color(0xFF1A1A1A);
-    final cardColor = const Color(0xFF2D2D2D);
-    final textColor = Colors.white; // High contrast white
+    const primaryColor = ChorePalColors.darkBlue;
+    const secondaryColor = ChorePalColors.lightBlue;
+    const accentColor = ChorePalColors.sunshineOrange;
+    const backgroundColor = Color(0xFF1A1A1A);
+    const cardColor = Color(0xFF2D2D2D);
+    const textColor = Colors.white; // High contrast white
     final textSecondaryColor = Colors.grey.shade300; // Lighter grey for better contrast
 
     return ThemeData(
@@ -243,7 +243,7 @@ class ThemeService extends ChangeNotifier {
           fontWeight: FontWeight.normal,
           fontSize: 13,
         ),
-        overlayColor: const MaterialStatePropertyAll(Colors.transparent),
+        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
         splashFactory: NoSplash.splashFactory,
       ),
       textTheme: TextTheme(

@@ -367,7 +367,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
                 (context, index) {
                   return SlideTransition(
                     position: Tween<Offset>(
-                      begin: Offset(1.0, 0.0),
+                      begin: const Offset(1.0, 0.0),
                       end: Offset.zero,
                     ).animate(CurvedAnimation(
                       parent: _slideController,
@@ -433,7 +433,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
           const SizedBox(height: 16),
 
           // Winner info
-          Text(
+          const Text(
             'Family Champion',
             style: TextStyle(
               fontSize: 24,
@@ -504,7 +504,7 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: isCurrentUser
-              ? BorderSide(color: Colors.blue, width: 2)
+              ? const BorderSide(color: Colors.blue, width: 2)
               : BorderSide.none,
         ),
         child: Container(
@@ -662,12 +662,12 @@ class _FamilyLeaderboardScreenState extends State<FamilyLeaderboardScreen>
       content = const Icon(Icons.emoji_events, color: Colors.white, size: 20);
     } else if (rank == 2) {
       badgeColor = Colors.grey.shade400;
-      content = Text('2',
+      content = const Text('2',
           style: TextStyle(
               color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16));
     } else if (rank == 3) {
       badgeColor = Colors.brown.shade400;
-      content = Text('3',
+      content = const Text('3',
           style: TextStyle(
               color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16));
     } else {

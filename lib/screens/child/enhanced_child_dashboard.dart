@@ -413,9 +413,9 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
             .toList();
 
         if (myChores.isEmpty) {
-          return Center(
+          return const Center(
             child: Padding(
-              padding: const EdgeInsets.all(32.0),
+              padding: EdgeInsets.all(32.0),
               child: ProfessionalEmptyState(
                 icon: Icons.celebration,
                 title: 'All Caught Up!',
@@ -493,9 +493,9 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
         }
 
         if (rewardState.rewards.isEmpty) {
-          return Center(
+          return const Center(
             child: Padding(
-              padding: const EdgeInsets.all(32.0),
+              padding: EdgeInsets.all(32.0),
               child: ProfessionalEmptyState(
                 icon: Icons.card_giftcard_outlined,
                 title: 'No Rewards Available',
@@ -606,11 +606,11 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
+            content: const Row(
               children: [
-                const Icon(Icons.celebration, color: Colors.white),
-                const SizedBox(width: 8),
-                const Text('Reward redeemed successfully!'),
+                Icon(Icons.celebration, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Reward redeemed successfully!'),
               ],
             ),
             backgroundColor: Colors.purple,

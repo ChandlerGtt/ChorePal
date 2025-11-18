@@ -507,7 +507,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                   ),
                   child: Text(
                     familyCode,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 6,
@@ -579,7 +579,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                     color: ChorePalColors.sunshineOrange.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.pending_actions,
                     color: ChorePalColors.sunshineOrange,
                     size: 24,
@@ -590,7 +590,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Awaiting Your Approval',
                         style: TextStyle(
                           fontSize: 16,
@@ -601,7 +601,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                       const SizedBox(height: 4),
                       Text(
                         '${pendingApprovalChores.length} chore${pendingApprovalChores.length > 1 ? 's' : ''} need approval',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
                           color: ChorePalColors.textSecondary,
                         ),
@@ -1098,8 +1098,8 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Dashboard header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1112,7 +1112,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                     letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   'Overview of your family\'s activity',
                   style: TextStyle(
@@ -1290,7 +1290,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         value: value,
                         minHeight: 20,
                         backgroundColor: Colors.white.withOpacity(0.2),
-                        valueColor: AlwaysStoppedAnimation<Color>(
+                        valueColor: const AlwaysStoppedAnimation<Color>(
                           ChorePalColors.lavenderPurple,
                         ),
                       );
@@ -1307,7 +1307,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Children Progress',
                   style: TextStyle(
                     fontSize: 22,
@@ -1477,7 +1477,7 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                             const Text('Motivate with points for completion'),
                         dense: true,
                         value: includeReward,
-                        activeColor: Colors.green,
+                        activeThumbColor: Colors.green,
                         contentPadding: EdgeInsets.zero,
                         onChanged: (value) {
                           setDialogState(() {
@@ -1512,22 +1512,22 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: SwitchListTile(
-                        title: Row(
+                        title: const Row(
                           children: [
                             Icon(
                               Icons.priority_high,
                               color: Colors.red,
                               size: 18,
                             ),
-                            const SizedBox(width: 8),
-                            const Text('High Priority'),
+                            SizedBox(width: 8),
+                            Text('High Priority'),
                           ],
                         ),
                         subtitle: const Text(
                             'This chore will be highlighted for children'),
                         dense: true,
                         value: selectedPriority == 'high',
-                        activeColor: Colors.red,
+                        activeThumbColor: Colors.red,
                         contentPadding: EdgeInsets.zero,
                         onChanged: (value) {
                           setDialogState(() {
@@ -1709,13 +1709,13 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                                 vertical: 12,
                               ),
                             ),
-                            child: Row(
+                            child: const Row(
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.add, size: 18),
-                                const SizedBox(width: 6),
-                                const Text('Create'),
+                                Icon(Icons.add, size: 18),
+                                SizedBox(width: 6),
+                                Text('Create'),
                               ],
                             ),
                           ),

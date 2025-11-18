@@ -209,8 +209,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final actualPhoneNumber = _getActualPhoneNumber();
         if (actualPhoneNumber == null || actualPhoneNumber.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
+            const SnackBar(
+              content: Text(
                   'Phone number is required to enable SMS notifications'),
               backgroundColor: Colors.orange,
               behavior: SnackBarBehavior.floating,
@@ -225,8 +225,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // Basic E.164 format validation
         if (!actualPhoneNumber.startsWith('+')) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
+            const SnackBar(
+              content: Text(
                   'Phone number must be in E.164 format (e.g., +18777804236)'),
               backgroundColor: Colors.orange,
               behavior: SnackBarBehavior.floating,
@@ -316,8 +316,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (_smsNotificationsEnabled &&
           (phoneNumber.isEmpty || actualPhoneNumber == null)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
+          const SnackBar(
+            content: Text(
                 'Phone number is required when SMS notifications are enabled'),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
@@ -329,8 +329,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Basic E.164 format validation if phone number is provided
       if (phoneNumber.isNotEmpty && !phoneNumber.startsWith('+')) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
+          const SnackBar(
+            content: Text(
                 'Phone number must be in E.164 format (e.g., +18777804236)'),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
@@ -345,11 +345,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Phone number saved'),
+        const SnackBar(
+          content: Text('Phone number saved'),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: 2),
         ),
       );
 
@@ -411,8 +411,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Validate format
       if (result.isNotEmpty && !result.startsWith('+')) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
+          const SnackBar(
+            content: Text(
                 'Phone number must be in E.164 format (e.g., +18777804236)'),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
@@ -444,11 +444,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }
 
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Phone number saved'),
+            const SnackBar(
+              content: Text('Phone number saved'),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 2),
+              duration: Duration(seconds: 2),
             ),
           );
         } catch (e) {
@@ -472,8 +472,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('User not found. Please log in again.'),
+          const SnackBar(
+            content: Text('User not found. Please log in again.'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -493,8 +493,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
         if (!emailRegex.hasMatch(email)) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Please enter a valid email address'),
+            const SnackBar(
+              content: Text('Please enter a valid email address'),
               backgroundColor: Colors.orange,
               behavior: SnackBarBehavior.floating,
             ),
@@ -523,11 +523,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Email saved successfully'),
+          const SnackBar(
+            content: Text('Email saved successfully'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -654,7 +654,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             trailing: Switch(
                               value: themeService.isDarkMode,
                               onChanged: _saveThemePreference,
-                              activeColor: ChorePalColors.darkBlue,
+                              activeThumbColor: ChorePalColors.darkBlue,
                             ),
                           ),
                         ],
@@ -672,7 +672,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
+                                  gradient: const LinearGradient(
                                     colors: [
                                       ChorePalColors.sunshineOrange,
                                       ChorePalColors.strawberryPink,
@@ -708,7 +708,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             trailing: Switch(
                               value: _pushNotificationsEnabled,
                               onChanged: _savePushNotificationPreference,
-                              activeColor: ChorePalColors.darkBlue,
+                              activeThumbColor: ChorePalColors.darkBlue,
                             ),
                           ),
                           // Only show email/SMS options and phone/email inputs for parents
@@ -720,7 +720,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               trailing: Switch(
                                 value: _emailNotificationsEnabled,
                                 onChanged: _saveEmailNotificationPreference,
-                                activeColor: ChorePalColors.darkBlue,
+                                activeThumbColor: ChorePalColors.darkBlue,
                               ),
                             ),
                             _buildSettingTile(
@@ -731,7 +731,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               trailing: Switch(
                                 value: _smsNotificationsEnabled,
                                 onChanged: _saveSmsNotificationPreference,
-                                activeColor: ChorePalColors.darkBlue,
+                                activeThumbColor: ChorePalColors.darkBlue,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -749,7 +749,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.phone,
                                         color: ChorePalColors.skyBlue,
                                         size: 20,
@@ -766,7 +766,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         ),
                                       ),
                                       if (_smsNotificationsEnabled)
-                                        Text(
+                                        const Text(
                                           ' *',
                                           style: TextStyle(
                                             color: Colors.red,
@@ -811,8 +811,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   if (_smsNotificationsEnabled &&
                                       _phoneNumberController.text.isEmpty)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 8),
+                                    const Padding(
+                                      padding: EdgeInsets.only(top: 8),
                                       child: Text(
                                         'Phone number is required when SMS notifications are enabled',
                                         style: TextStyle(
@@ -858,7 +858,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.email,
                                         color: ChorePalColors.skyBlue,
                                         size: 20,
@@ -959,7 +959,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       ChorePalColors.skyBlue.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Icon(
+                                child: const Icon(
                                   Icons.person,
                                   color: ChorePalColors.skyBlue,
                                   size: 20,
@@ -1112,7 +1112,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
-            Icon(
+            const Icon(
               Icons.chevron_right,
               color: ChorePalColors.textSecondary,
             ),
