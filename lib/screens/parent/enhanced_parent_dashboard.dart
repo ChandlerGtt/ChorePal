@@ -10,7 +10,6 @@ import '../../models/user.dart';
 import '../../widgets/reward_card.dart';
 import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
-import '../login_screen.dart';
 import 'add_reward_screen.dart';
 import 'assign_chore_screen.dart';
 import '../reward_history_screen.dart';
@@ -245,27 +244,11 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                   );
                 },
               ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.white),
-                tooltip: 'Logout',
-                onPressed: _handleLogout,
-              ),
             ],
           );
         },
       ),
     );
-  }
-
-  Future<void> _handleLogout() async {
-    await _authService.signOut();
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => const LoginScreen(),
-        ),
-      );
-    }
   }
 
   /// Builds modern bottom navigation bar
@@ -1671,50 +1654,53 @@ class _EnhancedParentDashboardState extends State<EnhancedParentDashboard>
                           child: const Text('Cancel'),
                         ),
                         const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            if (titleController.text.isNotEmpty) {
-                              Provider.of<ChoreState>(context, listen: false)
-                                  .addChore(
-                                Chore(
-                                  id: DateTime.now().toString(),
-                                  title: titleController.text,
-                                  description: descriptionController.text,
-                                  deadline: DateTime(
-                                    selectedDate.year,
-                                    selectedDate.month,
-                                    selectedDate.day,
-                                    selectedTime.hour,
-                                    selectedTime.minute,
+                        Flexible(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (titleController.text.isNotEmpty) {
+                                Provider.of<ChoreState>(context, listen: false)
+                                    .addChore(
+                                  Chore(
+                                    id: DateTime.now().toString(),
+                                    title: titleController.text,
+                                    description: descriptionController.text,
+                                    deadline: DateTime(
+                                      selectedDate.year,
+                                      selectedDate.month,
+                                      selectedDate.day,
+                                      selectedTime.hour,
+                                      selectedTime.minute,
+                                    ),
+                                    pointValue: includeReward
+                                        ? (int.tryParse(rewardController.text) ??
+                                            0)
+                                        : 0,
+                                    priority: selectedPriority,
                                   ),
-                                  pointValue: includeReward
-                                      ? (int.tryParse(rewardController.text) ??
-                                          0)
-                                      : 0,
-                                  priority: selectedPriority,
-                                ),
-                              );
-                              Navigator.pop(context);
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                                );
+                                Navigator.pop(context);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: MediaQuery.of(context).size.width < 400 ? 12 : 16,
+                                vertical: 12,
+                              ),
                             ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.add, size: 18),
+                                const SizedBox(width: 6),
+                                const Text('Create'),
+                              ],
                             ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.add, size: 20),
-                              SizedBox(width: 8),
-                              Text('Create Chore'),
-                            ],
                           ),
                         ),
                       ],

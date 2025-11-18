@@ -142,77 +142,107 @@ class ModernChoreCard extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           // Footer
-          Row(
-            children: [
-              if (chore.pointValue > 0) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: ChorePalColors.lemonYellow.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.star,
-                        size: 16,
-                        color: ChorePalColors.sunshineOrange,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${chore.pointValue} pts',
-                        style: TextStyle(
-                          color: ChorePalColors.sunshineOrange,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final availableWidth = constraints.maxWidth;
+              final pointsWidth = chore.pointValue > 0 ? availableWidth * 0.35 : 0.0;
+              final deadlineWidth = availableWidth * 0.35;
+              
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (chore.pointValue > 0)
+                    SizedBox(
+                      width: pointsWidth,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: availableWidth * 0.02,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: ChorePalColors.lemonYellow.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IntrinsicHeight(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                height: 14,
+                                width: 14,
+                                child: Icon(
+                                  Icons.star,
+                                  size: 14,
+                                  color: ChorePalColors.sunshineOrange,
+                                ),
+                              ),
+                              SizedBox(width: availableWidth * 0.01),
+                              Flexible(
+                                child: Text(
+                                  '${chore.pointValue} pts',
+                                  style: TextStyle(
+                                    color: ChorePalColors.sunshineOrange,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    height: 1.0,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ],
-              const Spacer(),
-              // Deadline
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: isPastDue
-                      ? Colors.red.withOpacity(0.1)
-                      : ChorePalColors.softBlue,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 14,
-                      color: isPastDue
-                          ? Colors.red.shade700
-                          : ChorePalColors.skyBlue,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${chore.deadline.day}/${chore.deadline.month}',
-                      style: TextStyle(
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  // Deadline
+                  SizedBox(
+                    width: deadlineWidth,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: availableWidth * 0.02,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
                         color: isPastDue
-                            ? Colors.red.shade700
-                            : ChorePalColors.skyBlue,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
+                            ? Colors.red.withOpacity(0.1)
+                            : ChorePalColors.softBlue,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: isPastDue
+                                ? Colors.red.shade700
+                                : ChorePalColors.skyBlue,
+                          ),
+                          SizedBox(width: availableWidth * 0.01),
+                          Flexible(
+                            child: Text(
+                              '${chore.deadline.day}/${chore.deadline.month}',
+                              style: TextStyle(
+                                color: isPastDue
+                                    ? Colors.red.shade700
+                                    : ChorePalColors.skyBlue,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                height: 1.0,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

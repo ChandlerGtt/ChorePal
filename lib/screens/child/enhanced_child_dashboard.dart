@@ -7,7 +7,6 @@ import '../../models/milestone.dart';
 import '../../widgets/reward_card.dart';
 import '../../widgets/enhanced_milestone_dialog.dart';
 import '../../services/firestore_service.dart';
-import '../login_screen.dart';
 import '../reward_history_screen.dart';
 import '../chore_history_screen.dart';
 import '../family_leaderboard_screen.dart';
@@ -266,16 +265,6 @@ class _EnhancedChildDashboardState extends State<EnhancedChildDashboard>
                     ],
                   ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.white),
-                tooltip: 'Logout',
-                onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                        builder: (context) => const LoginScreen()),
-                  );
-                },
               ),
             ],
           );
