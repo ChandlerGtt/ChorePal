@@ -4,6 +4,7 @@ import 'package:chore_pal/main.dart' as app;
 import 'package:flutter/material.dart';
 import '../helpers/test_helpers.dart';
 import '../helpers/mock_data.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Test suite for authentication functionality
 ///
@@ -13,6 +14,16 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Authentication Tests', () {
+    // Ensure user is signed out before each test
+    setUp(() async {
+      try {
+        await FirebaseAuth.instance.signOut();
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        // Ignore errors if already signed out
+      }
+    });
+
     testWidgets('App displays login screen on launch',
         (WidgetTester tester) async {
       // Launch the app
