@@ -202,24 +202,43 @@ exports.onChoreCreated = onDocumentCreated(
     secrets: ["SENDGRID_API_KEY", "TWILIO_SID", "TWILIO_TOKEN", "TWILIO_NUMBER"],
   },
   async (event) => {
-    const chore = event.data.data();
-    const choreId = event.params.choreId;
+    // Log immediately to verify function is triggered
+    console.log(`[onChoreCreated] FUNCTION TRIGGERED - Event received`);
+    console.log(`[onChoreCreated] Event params:`, JSON.stringify(event.params));
+    console.log(`[onChoreCreated] Event data exists:`, !!event.data);
+    
+    try {
+      const chore = event.data.data();
+      const choreId = event.params.choreId;
 
-    console.log(`Chore created: ${choreId}`);
+      console.log(`[onChoreCreated] Chore created: ${choreId}`);
+      console.log(`[onChoreCreated] Chore data:`, JSON.stringify(chore));
 
-    // Notify all assigned children
-    if (chore.assignedTo && Array.isArray(chore.assignedTo)) {
-      for (const childId of chore.assignedTo) {
-        await sendNotificationToUser(
-          childId,
-          "New Chore Assigned 📝",
-          `You have a new chore: "${chore.title}"`,
-          {
-            type: "chore_assigned",
-            choreId: choreId,
+      // Notify all assigned children
+      if (chore.assignedTo && Array.isArray(chore.assignedTo) && chore.assignedTo.length > 0) {
+        console.log(`[onChoreCreated] Notifying ${chore.assignedTo.length} children`);
+        for (const childId of chore.assignedTo) {
+          try {
+            await sendNotificationToUser(
+              childId,
+              "New Chore Assigned 📝",
+              `You have a new chore: "${chore.title}"`,
+              {
+                type: "chore_assigned",
+                choreId: choreId,
+              }
+            );
+            console.log(`[onChoreCreated] Notification sent to child: ${childId}`);
+          } catch (error) {
+            console.error(`[onChoreCreated] Error sending notification to child ${childId}:`, error);
           }
-        );
+        }
+      } else {
+        console.log(`[onChoreCreated] No children assigned to chore ${choreId}`);
       }
+    } catch (error) {
+      console.error(`[onChoreCreated] Error processing chore creation:`, error);
+      throw error;
     }
   }
 );
@@ -236,11 +255,19 @@ exports.onChoreUpdated = onDocumentUpdated(
     secrets: ["SENDGRID_API_KEY", "TWILIO_SID", "TWILIO_TOKEN", "TWILIO_NUMBER"],
   },
   async (event) => {
-    const before = event.data.before.data();
-    const after = event.data.after.data();
-    const choreId = event.params.choreId;
+    // Log immediately to verify function is triggered
+    console.log(`[onChoreUpdated] FUNCTION TRIGGERED - Event received`);
+    console.log(`[onChoreUpdated] Event params:`, JSON.stringify(event.params));
+    console.log(`[onChoreUpdated] Event data exists:`, !!event.data);
+    
+    try {
+      const before = event.data.before.data();
+      const after = event.data.after.data();
+      const choreId = event.params.choreId;
 
-    console.log(`Chore updated: ${choreId}`);
+      console.log(`[onChoreUpdated] Chore updated: ${choreId}`);
+      console.log(`[onChoreUpdated] Before:`, JSON.stringify(before));
+      console.log(`[onChoreUpdated] After:`, JSON.stringify(after));
 
     // Check if chore was just assigned to new children
     const beforeAssigned = new Set(before.assignedTo || []);
@@ -248,48 +275,71 @@ exports.onChoreUpdated = onDocumentUpdated(
     const newlyAssigned = [...afterAssigned].filter((id) => !beforeAssigned.has(id));
 
     if (newlyAssigned.length > 0) {
+      console.log(`[onChoreUpdated] ${newlyAssigned.length} newly assigned children detected`);
       for (const childId of newlyAssigned) {
-        await sendNotificationToUser(
-          childId,
-          "New Chore Assigned 📝",
-          `You have a new chore: "${after.title}"`,
-          {
-            type: "chore_assigned",
-            choreId: choreId,
-          }
-        );
+        try {
+          await sendNotificationToUser(
+            childId,
+            "New Chore Assigned 📝",
+            `You have a new chore: "${after.title}"`,
+            {
+              type: "chore_assigned",
+              choreId: choreId,
+            }
+          );
+          console.log(`[onChoreUpdated] Assignment notification sent to child: ${childId}`);
+        } catch (error) {
+          console.error(`[onChoreUpdated] Error sending assignment notification to ${childId}:`, error);
+        }
       }
     }
 
     // Check if chore was just completed (moved to pending approval)
     if (!before.isPendingApproval && after.isPendingApproval === true && after.completedBy) {
+      console.log(`[onChoreUpdated] Chore marked as pending approval by child: ${after.completedBy}`);
       const childId = after.completedBy;
       const familyId = after.familyId;
 
-      // Get child info
-      const childDoc = await admin.firestore().doc(`users/${childId}`).get();
-      const child = childDoc.exists ? childDoc.data() : null;
+      if (!familyId) {
+        console.error(`[onChoreUpdated] No familyId found for chore ${choreId}`);
+        // Don't return - continue to check for other state changes
+      } else {
+        // Get child info
+        const childDoc = await admin.firestore().doc(`users/${childId}`).get();
+        const child = childDoc.exists ? childDoc.data() : null;
 
-      // Get parent from family
-      if (familyId) {
+        // Get parent from family
         const familyDoc = await admin.firestore().doc(`families/${familyId}`).get();
         if (familyDoc.exists) {
           const family = familyDoc.data();
           // Families have parentIds array, notify all parents
           const parentIds = family.parentIds || [];
           
-          for (const parentId of parentIds) {
-            await sendNotificationToUser(
-              parentId,
-              "Chore Completed! 📋",
-              `${child?.name || "Your child"} completed "${after.title}" and is waiting for your approval.`,
-              {
-                type: "chore_completed",
-                choreId: choreId,
-                childId: childId,
+          if (parentIds.length === 0) {
+            console.error(`[onChoreUpdated] No parentIds found in family ${familyId}`);
+            // Don't return - continue to check for other state changes
+          } else {
+            console.log(`[onChoreUpdated] Notifying ${parentIds.length} parents`);
+            for (const parentId of parentIds) {
+              try {
+                await sendNotificationToUser(
+                  parentId,
+                  "Chore Completed! 📋",
+                  `${child?.name || "Your child"} completed "${after.title}" and is waiting for your approval.`,
+                  {
+                    type: "chore_completed",
+                    choreId: choreId,
+                    childId: childId,
+                  }
+                );
+                console.log(`[onChoreUpdated] Completion notification sent to parent: ${parentId}`);
+              } catch (error) {
+                console.error(`[onChoreUpdated] Error sending completion notification to parent ${parentId}:`, error);
               }
-            );
+            }
           }
+        } else {
+          console.error(`[onChoreUpdated] Family document ${familyId} not found`);
         }
       }
     }
@@ -299,18 +349,28 @@ exports.onChoreUpdated = onDocumentUpdated(
         after.isPendingApproval === false && 
         after.isCompleted === true &&
         after.completedBy) {
+      console.log(`[onChoreUpdated] Chore approved for child: ${after.completedBy}`);
       const childId = after.completedBy;
 
-      await sendNotificationToUser(
-        childId,
-        "Chore Approved! ✅",
-        `Great job! "${after.title}" was approved. You earned ${after.pointValue || 0} points!`,
-        {
-          type: "chore_approved",
-          choreId: choreId,
-          points: String(after.pointValue || 0),
-        }
-      );
+      try {
+        await sendNotificationToUser(
+          childId,
+          "Chore Approved! ✅",
+          `Great job! "${after.title}" was approved. You earned ${after.pointValue || 0} points!`,
+          {
+            type: "chore_approved",
+            choreId: choreId,
+            points: String(after.pointValue || 0),
+          }
+        );
+        console.log(`[onChoreUpdated] Approval notification sent to child: ${childId}`);
+      } catch (error) {
+        console.error(`[onChoreUpdated] Error sending approval notification to child ${childId}:`, error);
+      }
+    }
+    } catch (error) {
+      console.error(`[onChoreUpdated] Error processing chore update:`, error);
+      throw error;
     }
   }
 );
