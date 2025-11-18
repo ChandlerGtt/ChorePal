@@ -309,7 +309,7 @@ class FirestoreService {
 
     // Ensure the code doesn't start with 0
     if (code.startsWith('0')) {
-      code = '1' + code.substring(1);
+      code = '1${code.substring(1)}';
     }
 
     return code;
