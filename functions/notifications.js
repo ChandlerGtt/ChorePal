@@ -110,6 +110,17 @@ exports.sendNotification = onCall(
  */
 async function sendNotificationToUser(userId, title, body, data = null) {
   try {
+    // Validate title and body are not empty
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      console.error(`[sendNotificationToUser] Invalid or empty title for user ${userId}: "${title}"`);
+      return;
+    }
+    
+    if (!body || typeof body !== 'string' || body.trim().length === 0) {
+      console.error(`[sendNotificationToUser] Invalid or empty body for user ${userId}: "${body}"`);
+      return;
+    }
+
     const userDoc = await admin.firestore().doc(`users/${userId}`).get();
     if (!userDoc.exists) {
       console.log(`User ${userId} not found`);
@@ -117,6 +128,8 @@ async function sendNotificationToUser(userId, title, body, data = null) {
     }
 
     const userData = userDoc.data();
+    
+    console.log(`[sendNotificationToUser] Sending notification to user ${userId}: "${title}" - "${body}"`);
 
     // Send FCM notification if enabled
     if (userData.pushNotificationsEnabled && userData.fcmToken) {
@@ -216,21 +229,27 @@ exports.onChoreCreated = onDocumentCreated(
 
       // Notify all assigned children
       if (chore.assignedTo && Array.isArray(chore.assignedTo) && chore.assignedTo.length > 0) {
-        console.log(`[onChoreCreated] Notifying ${chore.assignedTo.length} children`);
-        for (const childId of chore.assignedTo) {
-          try {
-            await sendNotificationToUser(
-              childId,
-              "New Chore Assigned 📝",
-              `You have a new chore: "${chore.title}"`,
-              {
-                type: "chore_assigned",
-                choreId: choreId,
-              }
-            );
-            console.log(`[onChoreCreated] Notification sent to child: ${childId}`);
-          } catch (error) {
-            console.error(`[onChoreCreated] Error sending notification to child ${childId}:`, error);
+        // Validate chore title exists
+        const choreTitle = chore.title || chore.name || "a chore";
+        if (!choreTitle || choreTitle.trim().length === 0) {
+          console.error(`[onChoreCreated] Chore ${choreId} has empty title, skipping notifications`);
+        } else {
+          console.log(`[onChoreCreated] Notifying ${chore.assignedTo.length} children`);
+          for (const childId of chore.assignedTo) {
+            try {
+              await sendNotificationToUser(
+                childId,
+                "New Chore Assigned 📝",
+                `You have a new chore: "${choreTitle}"`,
+                {
+                  type: "chore_assigned",
+                  choreId: choreId,
+                }
+              );
+              console.log(`[onChoreCreated] Notification sent to child: ${childId}`);
+            } catch (error) {
+              console.error(`[onChoreCreated] Error sending notification to child ${childId}:`, error);
+            }
           }
         }
       } else {
@@ -276,20 +295,27 @@ exports.onChoreUpdated = onDocumentUpdated(
 
     if (newlyAssigned.length > 0) {
       console.log(`[onChoreUpdated] ${newlyAssigned.length} newly assigned children detected`);
-      for (const childId of newlyAssigned) {
-        try {
-          await sendNotificationToUser(
-            childId,
-            "New Chore Assigned 📝",
-            `You have a new chore: "${after.title}"`,
-            {
-              type: "chore_assigned",
-              choreId: choreId,
-            }
-          );
-          console.log(`[onChoreUpdated] Assignment notification sent to child: ${childId}`);
-        } catch (error) {
-          console.error(`[onChoreUpdated] Error sending assignment notification to ${childId}:`, error);
+      
+      // Validate chore title exists
+      const choreTitle = after.title || after.name || "a chore";
+      if (!choreTitle || choreTitle.trim().length === 0) {
+        console.error(`[onChoreUpdated] Chore ${choreId} has empty title, skipping assignment notifications`);
+      } else {
+        for (const childId of newlyAssigned) {
+          try {
+            await sendNotificationToUser(
+              childId,
+              "New Chore Assigned 📝",
+              `You have a new chore: "${choreTitle}"`,
+              {
+                type: "chore_assigned",
+                choreId: choreId,
+              }
+            );
+            console.log(`[onChoreUpdated] Assignment notification sent to child: ${childId}`);
+          } catch (error) {
+            console.error(`[onChoreUpdated] Error sending assignment notification to ${childId}:`, error);
+          }
         }
       }
     }
@@ -319,22 +345,30 @@ exports.onChoreUpdated = onDocumentUpdated(
             console.error(`[onChoreUpdated] No parentIds found in family ${familyId}`);
             // Don't return - continue to check for other state changes
           } else {
-            console.log(`[onChoreUpdated] Notifying ${parentIds.length} parents`);
-            for (const parentId of parentIds) {
-              try {
-                await sendNotificationToUser(
-                  parentId,
-                  "Chore Completed! 📋",
-                  `${child?.name || "Your child"} completed "${after.title}" and is waiting for your approval.`,
-                  {
-                    type: "chore_completed",
-                    choreId: choreId,
-                    childId: childId,
-                  }
-                );
-                console.log(`[onChoreUpdated] Completion notification sent to parent: ${parentId}`);
-              } catch (error) {
-                console.error(`[onChoreUpdated] Error sending completion notification to parent ${parentId}:`, error);
+            // Validate chore title and child name
+            const choreTitle = after.title || after.name || "a chore";
+            const childName = child?.name || "Your child";
+            
+            if (!choreTitle || choreTitle.trim().length === 0) {
+              console.error(`[onChoreUpdated] Chore ${choreId} has empty title, skipping completion notifications`);
+            } else {
+              console.log(`[onChoreUpdated] Notifying ${parentIds.length} parents`);
+              for (const parentId of parentIds) {
+                try {
+                  await sendNotificationToUser(
+                    parentId,
+                    "Chore Completed! 📋",
+                    `${childName} completed "${choreTitle}" and is waiting for your approval.`,
+                    {
+                      type: "chore_completed",
+                      choreId: choreId,
+                      childId: childId,
+                    }
+                  );
+                  console.log(`[onChoreUpdated] Completion notification sent to parent: ${parentId}`);
+                } catch (error) {
+                  console.error(`[onChoreUpdated] Error sending completion notification to parent ${parentId}:`, error);
+                }
               }
             }
           }
@@ -352,24 +386,168 @@ exports.onChoreUpdated = onDocumentUpdated(
       console.log(`[onChoreUpdated] Chore approved for child: ${after.completedBy}`);
       const childId = after.completedBy;
 
-      try {
-        await sendNotificationToUser(
-          childId,
-          "Chore Approved! ✅",
-          `Great job! "${after.title}" was approved. You earned ${after.pointValue || 0} points!`,
-          {
-            type: "chore_approved",
-            choreId: choreId,
-            points: String(after.pointValue || 0),
-          }
-        );
-        console.log(`[onChoreUpdated] Approval notification sent to child: ${childId}`);
-      } catch (error) {
-        console.error(`[onChoreUpdated] Error sending approval notification to child ${childId}:`, error);
+      // Validate chore title exists
+      const choreTitle = after.title || after.name || "your chore";
+      if (!choreTitle || choreTitle.trim().length === 0) {
+        console.error(`[onChoreUpdated] Chore ${choreId} has empty title, skipping approval notification`);
+      } else {
+        try {
+          await sendNotificationToUser(
+            childId,
+            "Chore Approved! ✅",
+            `Great job! "${choreTitle}" was approved. You earned ${after.pointValue || 0} points!`,
+            {
+              type: "chore_approved",
+              choreId: choreId,
+              points: String(after.pointValue || 0),
+            }
+          );
+          console.log(`[onChoreUpdated] Approval notification sent to child: ${childId}`);
+        } catch (error) {
+          console.error(`[onChoreUpdated] Error sending approval notification to child ${childId}:`, error);
+        }
+      }
+    }
+
+    // Check if chore was just rejected (moved from pending to rejected)
+    if (before.isPendingApproval === true && 
+        after.isPendingApproval === false && 
+        after.isCompleted === false &&
+        after.rejectionReason &&
+        before.completedBy) {
+      console.log(`[onChoreUpdated] Chore rejected for child: ${before.completedBy}`);
+      const childId = before.completedBy; // Use before.completedBy since it's cleared in after
+
+      // Validate chore title and rejection reason exist
+      const choreTitle = after.title || after.name || "your chore";
+      const rejectionReason = after.rejectionReason || "No reason provided";
+      
+      if (!choreTitle || choreTitle.trim().length === 0) {
+        console.error(`[onChoreUpdated] Chore ${choreId} has empty title, skipping rejection notification`);
+      } else if (!rejectionReason || rejectionReason.trim().length === 0) {
+        console.error(`[onChoreUpdated] Chore ${choreId} has empty rejection reason, skipping rejection notification`);
+      } else {
+        try {
+          await sendNotificationToUser(
+            childId,
+            "Chore Needs Revision 🔄",
+            `"${choreTitle}" was not approved. Reason: ${rejectionReason}`,
+            {
+              type: "chore_rejected",
+              choreId: choreId,
+              rejectionReason: rejectionReason,
+            }
+          );
+          console.log(`[onChoreUpdated] Rejection notification sent to child: ${childId}`);
+        } catch (error) {
+          console.error(`[onChoreUpdated] Error sending rejection notification to child ${childId}:`, error);
+        }
       }
     }
     } catch (error) {
       console.error(`[onChoreUpdated] Error processing chore update:`, error);
+      throw error;
+    }
+  }
+);
+
+/**
+ * Firestore trigger: When a reward is updated (redeemed)
+ */
+exports.onRewardUpdated = onDocumentUpdated(
+  {
+    document: "rewards/{rewardId}",
+    region: "us-central1",
+    secrets: ["SENDGRID_API_KEY", "TWILIO_SID", "TWILIO_TOKEN", "TWILIO_NUMBER"],
+  },
+  async (event) => {
+    // Log immediately to verify function is triggered
+    console.log(`[onRewardUpdated] FUNCTION TRIGGERED - Event received`);
+    console.log(`[onRewardUpdated] Event params:`, JSON.stringify(event.params));
+    console.log(`[onRewardUpdated] Event data exists:`, !!event.data);
+    
+    try {
+      const before = event.data.before.data();
+      const after = event.data.after.data();
+      const rewardId = event.params.rewardId;
+
+      console.log(`[onRewardUpdated] Reward updated: ${rewardId}`);
+      console.log(`[onRewardUpdated] Before:`, JSON.stringify(before));
+      console.log(`[onRewardUpdated] After:`, JSON.stringify(after));
+
+      // Check if reward was just redeemed (isRedeemed changed from false to true)
+      if (!before.isRedeemed && after.isRedeemed === true && after.redeemedBy) {
+        console.log(`[onRewardUpdated] Reward redeemed by child: ${after.redeemedBy}`);
+        const childId = after.redeemedBy;
+        const familyId = after.familyId;
+
+        if (!familyId) {
+          console.error(`[onRewardUpdated] No familyId found for reward ${rewardId}`);
+          return;
+        }
+
+        // Get child info
+        const childDoc = await admin.firestore().doc(`users/${childId}`).get();
+        const child = childDoc.exists ? childDoc.data() : null;
+
+        if (!child) {
+          console.error(`[onRewardUpdated] Child document ${childId} not found`);
+          return;
+        }
+
+        // Get family to find parents
+        const familyDoc = await admin.firestore().doc(`families/${familyId}`).get();
+        if (!familyDoc.exists) {
+          console.error(`[onRewardUpdated] Family document ${familyId} not found`);
+          return;
+        }
+
+        const family = familyDoc.data();
+        const parentIds = family.parentIds || [];
+        
+        if (parentIds.length === 0) {
+          console.error(`[onRewardUpdated] No parentIds found in family ${familyId}`);
+          return;
+        }
+
+        // Get reward details and validate
+        const rewardTitle = after.title || "a reward";
+        const pointsRequired = after.pointsRequired || 0;
+        const childName = child.name || "Your child";
+
+        // Validate reward title and child name
+        if (!rewardTitle || rewardTitle.trim().length === 0) {
+          console.error(`[onRewardUpdated] Reward ${rewardId} has empty title, skipping notifications`);
+        } else if (!childName || childName.trim().length === 0) {
+          console.error(`[onRewardUpdated] Child ${childId} has empty name, skipping notifications`);
+        } else {
+          console.log(`[onRewardUpdated] Notifying ${parentIds.length} parents about reward redemption`);
+          
+          // Notify all parents
+          for (const parentId of parentIds) {
+            try {
+              await sendNotificationToUser(
+                parentId,
+                "Reward Redeemed! 🎁",
+                `${childName} redeemed "${rewardTitle}" for ${pointsRequired} points.`,
+                {
+                  type: "reward_redeemed",
+                  rewardId: rewardId,
+                  childId: childId,
+                  pointsRequired: String(pointsRequired),
+                }
+              );
+              console.log(`[onRewardUpdated] Reward redemption notification sent to parent: ${parentId}`);
+            } catch (error) {
+              console.error(`[onRewardUpdated] Error sending notification to parent ${parentId}:`, error);
+            }
+          }
+        }
+      } else {
+        console.log(`[onRewardUpdated] Reward update did not trigger redemption notification (isRedeemed: ${before.isRedeemed} -> ${after.isRedeemed}, redeemedBy: ${after.redeemedBy})`);
+      }
+    } catch (error) {
+      console.error(`[onRewardUpdated] Error processing reward update:`, error);
       throw error;
     }
   }
